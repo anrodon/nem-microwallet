@@ -1,0 +1,177 @@
+body {
+    font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+    font-size: 100%;
+    width: 320px;
+    height: 500px;
+    background-image: url('/src/img/background.png');
+    background-size: cover;
+    text-align: center;
+    color: #FFF;
+    padding: 10px;
+}
+
+.error-message {
+    color: red;
+    display: none;
+}
+
+#success-message {
+    color: green;
+    display: none;
+}
+
+#p-balance {
+    font-size: 20px;
+}
+
+.sent {
+    background-color: #FFF;
+    margin: 0;
+    padding: 3px;
+    color: #000;
+    border-bottom: 1px solid #EEE;
+    border-left-style: solid;
+    border-left-color: #f4471a;
+}
+
+.received {
+    background-color: #FFF;
+    margin: 0;
+    padding: 3px;
+    color: #000;
+    border-bottom: 1px solid #EEE;
+    border-left-style: solid;
+    border-left-color: #43f41a;
+}
+
+.unconfirmed {
+    background-color: #FFF;
+    margin: 0;
+    padding: 3px;
+    color: #000;+
+    border-bottom: 1px solid #EEE;
+    border-left-style: solid;
+    border-left-color: #DDD;
+}
+
+.tx-link {
+    margin: 0 0 10px;
+}
+
+p {
+    margin: 0 0 5px !important;
+}
+
+#transactions-box {
+    height: 300px;
+    border: 1px solid #ccc;
+    overflow: auto;
+}
+
+.btn-1 {
+    margin: 5px;
+    background-color: #F27935;
+    border-radius: 30px;
+}
+
+.btn-1:hover, .btn-1:focus {
+    color: #FFF;
+}
+
+.file-selector {
+    display: inline-block;
+    margin-left: 75px;
+}
+
+.vertically-centered {
+    margin-top: 50%;
+}
+
+.fa-arrow-left {
+    font-size: 25px;
+    color: white;
+}
+
+.form-style-4 input[type=number],
+.form-style-4 input[type=button],
+.form-style-4 input[type=text],
+.form-style-4 input[type=password],
+.form-style-4 textarea,
+.form-style-4 label
+{
+    font-size: 16px;
+    color: #fff;
+    margin: 5px;
+}
+.form-style-4 label {
+    display:block;
+    margin-bottom: 10px;
+}
+.form-style-4 label > span{
+    display: inline-block;
+    float: left;
+}
+
+#recipient {
+    margin-top: 70px;
+}
+
+#export-wallet-button {
+    margin-top: 100px;
+}
+
+.form-style-4 input[type=text],
+.form-style-4 input[type=number],
+.form-style-4 input[type=password]
+{
+    background: transparent;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    border: none;
+    border-bottom: 1px dashed #83A4C5;
+    outline: none;
+    padding: 0px 0px 0px 0px;
+    font-style: italic;
+}
+.form-style-4 textarea,
+.form-style-4 input[type=password] {
+    font-style: italic;
+    padding: 0px 0px 0px 0px;
+    background: transparent;
+    outline: none;
+    border: none;
+    border-bottom: 1px dashed #83A4C5;
+    overflow: hidden;
+    resize:none;
+    height:20px;
+}
+
+.form-style-4 textarea:focus,
+.form-style-4 input[type=text]:focus,
+.form-style-4 input[type=number]:focus,
+.form-style-4 input[type=password]:focus
+{
+    border-bottom: 1px dashed #D9FFA9;
+}
+
+.form-style-4 input[type=number]::-webkit-input-placeholder,
+.form-style-4 input[type=button]::-webkit-input-placeholder,
+.form-style-4 input[type=text]::-webkit-input-placeholder,
+.form-style-4 input[type=password]::-webkit-input-placeholder,
+.form-style-4 textarea::-webkit-input-placeholder,
+.form-style-4 label::-webkit-input-placeholder
+{
+    font-size: 16px;
+    color: #fff;
+    text-align: center;
+}
+
+.styled-select {
+   background: url(http://i62.tinypic.com/15xvbd5.png) no-repeat 96% 0;
+   height: 29px;
+   overflow: hidden;
+   background-color: #F27935;
+   width: 240px;
+   overflow:hidden;
+   border-radius: 25px;
+}
