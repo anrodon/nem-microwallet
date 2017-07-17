@@ -87,6 +87,23 @@ let char2Id = function(startChar) {
     }
 }
 
+var intervals = new Array();
+window.oldSetInterval = window.setInterval;
+window.setInterval = function(func, interval) {
+    intervals.push(oldSetInterval(func, interval));
+}
+
+/**
+* clearIntervals() Clears all intervals in the extension
+*
+*/
+function clearIntervals() {
+    for (let interval in intervals) {
+       window.clearInterval(interval);
+    }
+    intervals = [];
+}
+
 /**
 * createPRNG() Creates a PRNG wallet
 *
@@ -152,6 +169,7 @@ function finishImport() {
     wallet = JSON.parse(walletStr);
     chrome.storage.local.clear(() => {
         chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
+        clearIntervals();
         renderHome();
     });
 }

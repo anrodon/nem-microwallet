@@ -1,11 +1,10 @@
 /**
 * getBalanceAndTxs() Gets and prints the balance and transactions of an address
 *
-* @param {object} endpoint - An NIS endpoint object
-* @param {string} address - An account address
-* @param {number} network - A NEM network Id
 */
-function getBalanceAndTxs(endpoint, address, network) {
+function getBalanceAndTxs() {
+    let address = wallet.accounts[0].address;
+    let network = wallet.accounts[0].network;
     nem.com.requests.account.mosaics.owned(endpoint, address).then((res) => {
         const data = res.data;
         let balance = fmtNemValue(data[0].quantity) + ' ' + data[0].mosaicId.name;
@@ -77,11 +76,10 @@ function getBalanceAndTxs(endpoint, address, network) {
 /**
 * getNewBalanceAndTxs() Gets and prints the new balance and new transactions of an address
 *
-* @param {object} endpoint - An NIS endpoint object
-* @param {string} address - An account address
-* @param {number} network - A NEM network Id
 */
-function getNewBalanceAndTxs(endpoint, address, network) {
+function getNewBalanceAndTxs() {
+    let address = wallet.accounts[0].address;
+    let network = wallet.accounts[0].network;
     nem.com.requests.account.mosaics.owned(endpoint, address).then((res) => {
         const data = res.data;
         let balance = fmtNemValue(data[0].quantity) + ' ' + data[0].mosaicId.name;
@@ -249,8 +247,9 @@ function renderHome() {
             $("#to-settings-button").click(() => renderSettings());
             const address = wallet.accounts[0].address;
             $('#p-address').text(fmtAddress(address));
-            getBalanceAndTxs(endpoint, address, network);
-            setInterval(() => getNewBalanceAndTxs(endpoint, address, network), 5000);
+            getBalanceAndTxs();
+            clearIntervals();
+            setInterval(() => getNewBalanceAndTxs(), 5000);
         }
     });
 }
