@@ -104,7 +104,10 @@ function createPRNG() {
         // Save it using the Chrome extension storage API.
 
         chrome.storage.local.clear(() => {
-            chrome.storage.local.set({'default_xem_wallet': wallet}, () => renderHome());
+            chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+                exportWallet();
+                renderHome();
+            });
         });
     }
 }
@@ -128,7 +131,7 @@ function exportWallet() {
         else{
             var elem = window.document.createElement('a');
             elem.href = window.URL.createObjectURL(blob);
-            elem.download = 'wallet.wlt';
+            elem.download = `${data.default_xem_wallet.name}.wlt`;
             document.body.appendChild(elem);
             elem.click();
             document.body.removeChild(elem);
