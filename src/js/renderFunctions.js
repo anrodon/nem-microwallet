@@ -19,7 +19,7 @@ function getBalanceAndTxs(endpoint, address, network) {
                     <p>Unconfirmed Transaction</p>
                     <p>From: ${fmtAddress(toAddress(trx.transaction.signer, network))}</p>
                     <p>To: ${fmtAddress(trx.transaction.recipient)}</p>
-                    <p>Message: ${hex2a(trx.transaction.message.payload)}</p>
+                    <p>Message: ${fmtHexToUtf8(trx.transaction.message.payload)}</p>
                     <p>Amount: ${fmtNemValue(trx.transaction.amount)} XEM Fee: ${fmtNemValue(trx.transaction.fee)} XEM<p>
                 </div>
             `);
@@ -34,7 +34,7 @@ function getBalanceAndTxs(endpoint, address, network) {
                             <div class="received">
                                 <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -43,7 +43,7 @@ function getBalanceAndTxs(endpoint, address, network) {
                             <div class="received">
                                 <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -54,7 +54,7 @@ function getBalanceAndTxs(endpoint, address, network) {
                             <div class="sent">
                                 <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -63,7 +63,7 @@ function getBalanceAndTxs(endpoint, address, network) {
                             <div class="sent">
                                 <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -96,7 +96,7 @@ function getNewBalanceAndTxs(endpoint, address, network) {
                     <p>Unconfirmed Transaction</p>
                     <p>From: ${fmtAddress(toAddress(trx.transaction.signer, network))}</p>
                     <p>To: ${fmtAddress(trx.transaction.recipient)}</p>
-                    <p>Message: ${hex2a(trx.transaction.message.payload)}</p>
+                    <p>Message: ${fmtHexToUtf8(trx.transaction.message.payload)}</p>
                     <p>Amount: ${fmtNemValue(trx.transaction.amount)} XEM Fee: ${fmtNemValue(trx.transaction.fee)} XEM<p>
                 </div>
             `);
@@ -110,7 +110,7 @@ function getNewBalanceAndTxs(endpoint, address, network) {
                             <div class="received">
                                 <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -119,7 +119,7 @@ function getNewBalanceAndTxs(endpoint, address, network) {
                             <div class="received">
                                 <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -130,7 +130,7 @@ function getNewBalanceAndTxs(endpoint, address, network) {
                             <div class="sent">
                                 <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
@@ -139,7 +139,7 @@ function getNewBalanceAndTxs(endpoint, address, network) {
                             <div class="sent">
                                 <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${hex2a(tx.transaction.message.payload)}</p>
+                                <p>Message: ${fmtHexToUtf8(tx.transaction.message.payload)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
