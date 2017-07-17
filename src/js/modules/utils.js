@@ -416,6 +416,10 @@ function sendTransaction() {
                         $('#an-error-message').show();
                     }
                     $('#success-message').show();
+                    $('#recipient').val('');
+                    $('#amount').val('');
+                    $('#message').val('');
+                    $('#password').val('');
                 });
             } catch(err) {
                 $('#an-error-message').show();

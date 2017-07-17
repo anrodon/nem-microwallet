@@ -305,7 +305,9 @@ function renderNewTransaction() {
         <a id="to-home"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
         <!-- END NEW TRANSACTION PAGE -->`
     );
-    $("#send-transaction-button").click(() => sendTransaction());
+    $("#send-transaction-button").click(() => {
+        sendTransaction();
+    });
     $("#to-home").click(() => renderHome());
 }
 
