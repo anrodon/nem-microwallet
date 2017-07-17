@@ -164,6 +164,34 @@ function fmtAddress(input) {
     return input && input.toUpperCase().replace(/-/g, '').match(/.{1,6}/g).join('-');
 }
 
+
+/**
+* fmtHexToUtf8() Convert hex to utf8
+*
+* @param data: Hex data
+*
+* @return result: utf8 string
+*/
+function fmtHexToUtf8(data) {
+    if (data === undefined) return data;
+    let o = data;
+    if (o && o.length > 2 && o[0] === 'f' && o[1] === 'e') {
+        return "HEX: " + o.slice(2);
+    }
+    let result;
+    try {
+        result = decodeURIComponent(escape(hex2a(o)))
+    } catch (e) {
+        //result = "Error, message not properly encoded !";
+        result = hex2a(o);
+        console.log('invalid text input: ' + data);
+    }
+    //console.log(decodeURIComponent(escape( hex2a(o) )));*/
+    //result = hex2a(o);
+    return result;
+}
+
+
 /**
 * fmtNemValue() Format a NEM Value
 *
@@ -417,12 +445,3 @@ function ua2hex(ua) {
     }
     return s;
 };
-
-
-module.exports = {
-    b32decode,
-    b32encode,
-    char2Id,
-    id2Char,
-    id2Prefix
-}
