@@ -1,3 +1,4 @@
+'use strict';
 var nem = require("nem-sdk").default;
 let endpoint;
 let wallet;
