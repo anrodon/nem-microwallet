@@ -87,6 +87,23 @@ let char2Id = function(startChar) {
     }
 }
 
+var intervals = new Array();
+window.oldSetInterval = window.setInterval;
+window.setInterval = function(func, interval) {
+    intervals.push(oldSetInterval(func, interval));
+}
+
+/**
+* clearIntervals() Clears all intervals in the extension
+*
+*/
+function clearIntervals() {
+    for (let interval in intervals) {
+       window.clearInterval(interval);
+    }
+    intervals = [];
+}
+
 /**
 * createPRNG() Creates a PRNG wallet
 *
@@ -104,7 +121,10 @@ function createPRNG() {
         // Save it using the Chrome extension storage API.
 
         chrome.storage.local.clear(() => {
-            chrome.storage.local.set({'default_xem_wallet': wallet}, () => renderHome());
+            chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+                exportWallet();
+                renderHome();
+            });
         });
     }
 }
@@ -128,7 +148,7 @@ function exportWallet() {
         else{
             var elem = window.document.createElement('a');
             elem.href = window.URL.createObjectURL(blob);
-            elem.download = 'wallet.wlt';
+            elem.download = `${data.default_xem_wallet.name}.wlt`;
             document.body.appendChild(elem);
             elem.click();
             document.body.removeChild(elem);
@@ -149,6 +169,7 @@ function finishImport() {
     wallet = JSON.parse(walletStr);
     chrome.storage.local.clear(() => {
         chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
+        clearIntervals();
         renderHome();
     });
 }
@@ -163,6 +184,34 @@ function finishImport() {
 function fmtAddress(input) {
     return input && input.toUpperCase().replace(/-/g, '').match(/.{1,6}/g).join('-');
 }
+
+
+/**
+* fmtHexToUtf8() Convert hex to utf8
+*
+* @param data: Hex data
+*
+* @return result: utf8 string
+*/
+function fmtHexToUtf8(data) {
+    if (data === undefined) return data;
+    let o = data;
+    if (o && o.length > 2 && o[0] === 'f' && o[1] === 'e') {
+        return "HEX: " + o.slice(2);
+    }
+    let result;
+    try {
+        result = decodeURIComponent(escape(hex2a(o)))
+    } catch (e) {
+        //result = "Error, message not properly encoded !";
+        result = hex2a(o);
+        console.log('invalid text input: ' + data);
+    }
+    //console.log(decodeURIComponent(escape( hex2a(o) )));*/
+    //result = hex2a(o);
+    return result;
+}
+
 
 /**
 * fmtNemValue() Format a NEM Value
@@ -367,6 +416,10 @@ function sendTransaction() {
                         $('#an-error-message').show();
                     }
                     $('#success-message').show();
+                    $('#recipient').val('');
+                    $('#amount').val('');
+                    $('#message').val('');
+                    $('#password').val('');
                 });
             } catch(err) {
                 $('#an-error-message').show();
@@ -417,12 +470,3 @@ function ua2hex(ua) {
     }
     return s;
 };
-
-
-module.exports = {
-    b32decode,
-    b32encode,
-    char2Id,
-    id2Char,
-    id2Prefix
-}

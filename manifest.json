@@ -4,16 +4,16 @@
 
     "name": "NEM Microwallet",
     "description": "NEM Blockchain Chrome Extension wallet",
-    "version": "0.0.1.5",
+    "version": "0.0.1.6",
 
     "browser_action": {
         "default_title": "NEM Microwallet",
-        "default_icon": "./src/img/nem.png",
-        "default_popup": "./src/popup.html"
+        "default_icon": "./img/nem.png",
+        "default_popup": "./popup.html"
     },
-    "icons": { "16": "./src/img/nem.png",
-           "48": "./src/img/nem.png",
-          "128": "./src/img/nem-128.png"
+    "icons": { "16": "./img/nem.png",
+           "48": "./img/nem.png",
+          "128": "./img/nem-128.png"
       },
     "permissions": [
       "activeTab",
