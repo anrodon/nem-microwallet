@@ -40,7 +40,7 @@ To build your own release (if you don't trust the one deployed at the Chrome Web
   
 3. Access the project folder with:
 
-  `cd nem-microwallet`
+   `cd nem-microwallet`
   
   
 4. Install all dependencies with:
