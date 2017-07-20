@@ -36,11 +36,11 @@ To build your own release (if you don't trust the one deployed at the Chrome Web
 1. Open a console.
 2. Clone this repository with:
 
-  `git clone https://github.com/anrodon/nem-microwallet`
+    `git clone https://github.com/anrodon/nem-microwallet`
   
 3. Access the project folder with:
 
-  `cd nem-microwallet`
+    `cd nem-microwallet`
   
   
 4. Install all dependencies with:
