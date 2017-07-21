@@ -312,6 +312,46 @@ function renderNewTransaction() {
 }
 
 /**
+* renderAccountInfoQR() Renders the QR address of the wallet
+*
+*/
+function renderAccountInfoQR() {
+    $('body').empty();
+    $('body').append(`
+        <!-- QR ADDRESS PAGE -->
+        <div id="qr-address-page">
+            <h4 id="h4-address" style="margin-top: 25px;"></h4>
+            <div class="row vertically-centered" style="margin-top: 50px;">
+                <center><div id="accountInfoQR"></div></center>
+            </div>
+        </div>
+        <a id="to-settings"><i class="fa fa-arrow-left" aria-hidden="true" style="margin-top: 50px;"></i><a>
+        <!-- END QR ADDRESS PAGE -->`
+    );
+    const address = wallet.accounts[0].address;
+    $('#h4-address').text(fmtAddress(address));
+    // Account info model for QR
+    const accountInfoModelQR = {
+        "v": network === testnetId ? 1 : 2,
+        "type": 1,
+        "data": {
+            "addr": address,
+            "name": wallet.name
+        }
+    }
+    const text = JSON.stringify(accountInfoModelQR);
+    let qrCode = kjua({
+                size: 256,
+                text: text,
+                fill: '#000',
+                quiet: 0,
+                ratio: 2,
+    });
+    $('#accountInfoQR').append(qrCode);
+    $("#to-settings").click(() => renderSettings());
+}
+
+/**
 * renderSettings() Renders the settings page
 *
 */
@@ -326,6 +366,9 @@ function renderSettings() {
                     <button id="export-wallet-button" class="btn btn-1">${exportWalletText}</button>
                 </div>
                 <div class="col-sm-12">
+                    <button id="show-account-info-qr-button" class="btn btn-1">${showAccountInfoQRText}</button>
+                </div>
+                <div class="col-sm-12">
                     <button id="logout-button" class="btn btn-1">${logoutText}</button>
                 </div>
             </div>
@@ -334,6 +377,7 @@ function renderSettings() {
         <!-- END SETTINGS PAGE -->`
     );
     $("#export-wallet-button").click(() => exportWallet());
+    $("#show-account-info-qr-button").click(() => renderAccountInfoQR());
     $("#logout-button").click(() => logout());
     $("#to-home").click(() => renderHome());
 }
