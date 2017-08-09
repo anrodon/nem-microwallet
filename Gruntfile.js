@@ -75,7 +75,7 @@ module.exports = grunt => {
 
     grunt.loadNpmTasks('grunt-contrib-concat');
 
-    grunt.registerTask('build', [
+    grunt.registerTask('default', [
         'clean:dist',
         'concat',
         'copy:dist'

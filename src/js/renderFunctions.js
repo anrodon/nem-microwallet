@@ -150,6 +150,82 @@ function getNewBalanceAndTxs() {
 }
 
 /**
+* renderCreateBrainWallet() Renders the create brain wallet page
+*
+*/
+function renderCreateBrainWallet() {
+    $('body').empty();
+    $('body').append(`
+        <!-- CREATE BRAIN WALLET PAGE -->
+        <div id="create-brain-wallet-page" class="form-style-4">
+            <h1>${createBrainWalletText}</h1>
+            <input type="text" id="wallet-name" placeholder="${walletNameText}" style="margin-top: 95px;"></input>
+            <input type="password" id="wallet-passphrase" placeholder="${passphraseText}"></input>
+            <input type="password" id="wallet-confirm-passphrase" placeholder="${confirmPassphraseText}"></input>
+            <select id="wallet-network" class="styled-select">
+                <option value="${testnetId}">${testnetText}</option>
+                <option value="${mainnetId}">${mainnetText}</option>
+                <option value="${mijinId}">${mijinText}</option>
+            </select>
+            <button id="create-account-button" class="btn btn-1">${createWalletText}</button>
+            <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
+            <p class="error-message" id="passphrases-incorrect">${passphrasesMustBeEqualText}</p>
+        </div>
+        <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
+        <!-- END CREATE BRAIN WALLET PAGE -->`
+    );
+    $("#create-account-button").click(() => {
+        const walletName = $('#wallet-name').val();
+        const walletPassphrase = $('#wallet-passphrase').val();
+        if (walletName == "" || walletPassphrase == "") {
+            $('#all-fields-required').show();
+            setInterval(function(){ $('#all-fields-required').hide(); }, 5000);
+        }
+        else if ($('#wallet-passphrase').val() != $('#wallet-confirm-passphrase').val()) {
+            $('#passphrases-incorrect').show();
+            setInterval(function(){ $('#passphrases-incorrect').hide(); }, 5000);
+        }
+        else createBrainWallet();
+    });
+    $("#to-login").click(() => renderCreateWallet());
+}
+
+/**
+* renderCreatePRNGWallet() Renders the create PRNG wallet page
+*
+*/
+function renderCreatePRNGWallet() {
+    $('body').empty();
+    $('body').append(`
+        <!-- CREATE PRNG WALLET PAGE -->
+        <div id="create-prng-wallet-page" class="form-style-4">
+            <h1>${createPRNGWalletText}</h1>
+            <input type="text" id="wallet-name" placeholder="${walletNameText}" style="margin-top: 95px;"></input>
+            <input type="password" id="wallet-password" placeholder="${passwordText}"></input>
+            <select id="wallet-network" class="styled-select">
+                <option value="${testnetId}">${testnetText}</option>
+                <option value="${mainnetId}">${mainnetText}</option>
+                <option value="${mijinId}">${mijinText}</option>
+            </select>
+            <button id="create-account-button" class="btn btn-1">${createWalletText}</button>
+            <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
+        </div>
+        <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
+        <!-- END CREATE PRNG WALLET PAGE -->`
+    );
+    $("#create-account-button").click(() => {
+        const walletName = $('#wallet-name').val();
+        const walletPassword = $('#wallet-password').val();
+        if (walletName == "" || walletPassword == "") {
+            $('#all-fields-required').show();
+            setInterval(function(){ $('#all-fields-required').hide(); }, 5000);
+        }
+        else createPRNG();
+    });
+    $("#to-login").click(() => renderCreateWallet());
+}
+
+/**
 * renderCreateWallet() Renders the create wallet
 *
 */
@@ -159,20 +235,16 @@ function renderCreateWallet() {
         <!-- CREATE WALLET PAGE -->
         <div id="create-wallet-page" class="form-style-4">
             <h1>${createWalletText}</h1>
-            <input type="text" id="wallet-name" placeholder="${walletNameText}" style="margin-top: 95px;"></input>
-            <input type="password" id="wallet-password" placeholder="${passwordText}"></input>
-            <select id="wallet-network" class="styled-select">
-                <option value="${testnetId}">${testnetText}</option>
-                <option value="${mainnetId}">${mainnetText}</option>
-                <option value="${mijinId}">${mijinText}</option>
-            </select>
-            <button id="create-account-button" class="btn btn-1">${createWalletText}</button>
-            <p id="error-message">${allFieldsRequiredText}</p>
+            <button id="create-prng-wallet-button" class="btn btn-1">${createPRNGWalletText}</button>
+            <button id="create-brain-wallet-button" class="btn btn-1">${createBrainWalletText}</button>
+            <button id="import-key-button" class="btn btn-1">${importKeyText}</button>
         </div>
         <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
         <!-- END CREATE WALLET PAGE -->`
     );
-    $("#create-account-button").click(() => createPRNG());
+    $("#create-prng-wallet-button").click(() => renderCreatePRNGWallet());
+    $("#create-brain-wallet-button").click(() => renderCreateBrainWallet());
+    $("#import-key-button").click(() => renderImportPrivateKey());
     $("#to-login").click(() => renderLogin());
 }
 
@@ -194,7 +266,7 @@ function renderImportWallet() {
                     <button id="import-wallet-button" class="btn btn-1">${importWalletText}</button>
                 </div>
                 <div class="col-sm-12">
-                    <p id="error-message">${allFieldsRequiredText}</p>
+                    <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
                 </div>
                 <div class="col-sm-12">
                     <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
@@ -255,6 +327,42 @@ function renderHome() {
 }
 
 /**
+* renderImportPrivateKey() Renders the import private key page
+*
+*/
+function renderImportPrivateKey() {
+    $('body').empty();
+    $('body').append(`
+        <!-- IMPORT PRIVATE KEY PAGE -->
+        <div class="form-style-4">
+            <h1>${importKeyText}</h1>
+            <input type="text" id="wallet-name" placeholder="${walletNameText}" style="margin-top: 95px;"></input>
+            <input type="password" id="wallet-p-key" placeholder="${privateKeyText}"></input>
+            <input type="password" id="wallet-password" placeholder="${passwordText}"></input>
+            <select id="wallet-network" class="styled-select">
+                <option value="${testnetId}">${testnetText}</option>
+                <option value="${mainnetId}">${mainnetText}</option>
+                <option value="${mijinId}">${mijinText}</option>
+            </select>
+            <button id="create-account-button" class="btn btn-1">${createWalletText}</button>
+            <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
+        </div>
+        <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
+        <!-- END IMPORT PRIVATE KEY PAGE -->`
+    );
+    $("#create-account-button").click(() => {
+        const walletName = $('#wallet-name').val();
+        const walletPassword = $('#wallet-password').val();
+        if (walletName == "" || walletPassword == "") {
+            $('#all-fields-required').show();
+            setInterval(function(){ $('#all-fields-required').hide(); }, 5000);
+        }
+        else createImportKeyWallet();
+    });
+    $("#to-login").click(() => renderCreateWallet());
+}
+
+/**
 * renderLogin() Renders the login page
 *
 */
@@ -312,6 +420,46 @@ function renderNewTransaction() {
 }
 
 /**
+* renderAccountInfoQR() Renders the QR address of the wallet
+*
+*/
+function renderAccountInfoQR() {
+    $('body').empty();
+    $('body').append(`
+        <!-- QR ADDRESS PAGE -->
+        <div id="qr-address-page">
+            <h4 id="h4-address" style="margin-top: 25px;"></h4>
+            <div class="row vertically-centered" style="margin-top: 50px;">
+                <center><div id="accountInfoQR"></div></center>
+            </div>
+        </div>
+        <a id="to-settings"><i class="fa fa-arrow-left" aria-hidden="true" style="margin-top: 50px;"></i><a>
+        <!-- END QR ADDRESS PAGE -->`
+    );
+    const address = wallet.accounts[0].address;
+    $('#h4-address').text(fmtAddress(address));
+    // Account info model for QR
+    const accountInfoModelQR = {
+        "v": network === testnetId ? 1 : 2,
+        "type": 1,
+        "data": {
+            "addr": address,
+            "name": wallet.name
+        }
+    }
+    const text = JSON.stringify(accountInfoModelQR);
+    let qrCode = kjua({
+                size: 256,
+                text: text,
+                fill: '#000',
+                quiet: 0,
+                ratio: 2,
+    });
+    $('#accountInfoQR').append(qrCode);
+    $("#to-settings").click(() => renderSettings());
+}
+
+/**
 * renderSettings() Renders the settings page
 *
 */
@@ -326,6 +474,9 @@ function renderSettings() {
                     <button id="export-wallet-button" class="btn btn-1">${exportWalletText}</button>
                 </div>
                 <div class="col-sm-12">
+                    <button id="show-account-info-qr-button" class="btn btn-1">${showAccountInfoQRText}</button>
+                </div>
+                <div class="col-sm-12">
                     <button id="logout-button" class="btn btn-1">${logoutText}</button>
                 </div>
             </div>
@@ -334,6 +485,7 @@ function renderSettings() {
         <!-- END SETTINGS PAGE -->`
     );
     $("#export-wallet-button").click(() => exportWallet());
+    $("#show-account-info-qr-button").click(() => renderAccountInfoQR());
     $("#logout-button").click(() => logout());
     $("#to-home").click(() => renderHome());
 }

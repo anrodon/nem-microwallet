@@ -105,6 +105,47 @@ function clearIntervals() {
 }
 
 /**
+* createBrainWallet() Creates a Brain wallet
+*
+*/
+function createBrainWallet() {
+    const walletName = $('#wallet-name').val();
+    const walletPassword = $('#wallet-passphrase').val();
+    const network = $('#wallet-network').val()
+
+    wallet = nem.model.wallet.createBrain(walletName, walletPassword, parseInt(network));
+    // Save it using the Chrome extension storage API.
+
+    chrome.storage.local.clear(() => {
+        chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+            exportWallet();
+            renderHome();
+        });
+    });
+}
+
+/**
+* createImportKeyWallet() Creates a wallet from an imported private key
+*
+*/
+function createImportKeyWallet() {
+    const walletName = $('#wallet-name').val();
+    const walletPrivateKey = $('#wallet-p-key').val();
+    const walletPassword = $('#wallet-password').val();
+    const network = $('#wallet-network').val()
+
+    wallet = nem.model.wallet.importPrivateKey(walletName, walletPassword, walletPrivateKey, parseInt(network));
+    // Save it using the Chrome extension storage API.
+
+    chrome.storage.local.clear(() => {
+        chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+            exportWallet();
+            renderHome();
+        });
+    });
+}
+
+/**
 * createPRNG() Creates a PRNG wallet
 *
 */
@@ -113,20 +154,15 @@ function createPRNG() {
     const walletPassword = $('#wallet-password').val();
     const network = $('#wallet-network').val()
 
-    if (walletName == "" || walletPassword == "") {
-        $('#error-message').show();
-    }
-    else {
-        const wallet = nem.model.wallet.createPRNG(walletName, walletPassword, parseInt(network));
-        // Save it using the Chrome extension storage API.
+    wallet = nem.model.wallet.createPRNG(walletName, walletPassword, parseInt(network));
+    // Save it using the Chrome extension storage API.
 
-        chrome.storage.local.clear(() => {
-            chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
-                exportWallet();
-                renderHome();
-            });
+    chrome.storage.local.clear(() => {
+        chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+            exportWallet();
+            renderHome();
         });
-    }
+    });
 }
 
 /**
