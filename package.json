@@ -29,5 +29,8 @@
     "load-grunt-tasks": "^3.5.2",
     "serve-static": "^1.12.3",
     "time-grunt": "^1.4.0"
+  },
+  "dependencies": {
+    "kjua": "^0.1.2"
   }
 }

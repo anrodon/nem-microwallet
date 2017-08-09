@@ -78,6 +78,15 @@ p {
     color: #FFF;
 }
 
+.error-message {
+    color: red;
+    display: none;
+}
+
+#create-prng-wallet-button {
+    margin-top: 110px;
+}
+
 .file-selector {
     display: inline-block;
     margin-left: 75px;
