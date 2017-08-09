@@ -12,6 +12,7 @@ const passwordText = "Password";
 const passphraseText = "Passphrase";
 const confirmPassphraseText = "Confirm passphrase";
 const passphrasesMustBeEqualText = "Passphrases must be equal";
+const privateKeyText = "Private key";
 const testnetText = "Testnet";
 const mainnetText = "Mainnet";
 const mijinText = "Mijin";

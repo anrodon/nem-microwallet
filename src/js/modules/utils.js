@@ -125,6 +125,27 @@ function createBrainWallet() {
 }
 
 /**
+* createImportKeyWallet() Creates a wallet from an imported private key
+*
+*/
+function createImportKeyWallet() {
+    const walletName = $('#wallet-name').val();
+    const walletPrivateKey = $('#wallet-p-key').val();
+    const walletPassword = $('#wallet-password').val();
+    const network = $('#wallet-network').val()
+
+    wallet = nem.model.wallet.importPrivateKey(walletName, walletPassword, walletPrivateKey, parseInt(network));
+    // Save it using the Chrome extension storage API.
+
+    chrome.storage.local.clear(() => {
+        chrome.storage.local.set({'default_xem_wallet': wallet}, () => {
+            exportWallet();
+            renderHome();
+        });
+    });
+}
+
+/**
 * createPRNG() Creates a PRNG wallet
 *
 */
