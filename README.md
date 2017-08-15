@@ -1,7 +1,9 @@
 # NEM Microwallet
 ## NEM Blockchain Chrome Extension wallet
 
-This repository contains the source code for the NEM Microwallet extension, a Chrome extension that allows the user to have some of the nem features in a fast and accessible way.
+This repository contains the source code for the NEM Microwallet, a Chrome extension that allows the user to have some of the NEM features in a fast and accessible way.
+
+You can get the extension downloading it at the [Chrome Webstore](https://chrome.google.com/webstore/detail/dhjphghceddgjhboapfeeonimnihpkkn).
 
 ### Features
 At this moment, the NEM Microwallet has the following features:
@@ -13,11 +15,10 @@ At this moment, the NEM Microwallet has the following features:
 - Visualization of address and balance.
 - Visualization of outcoming, incoming and unconfirmed transactions.
 - Automatic refresh of balance and transactions.
+- Visualization of QR Address
 
 ### Feature roadmap
 As this is still an Alpha version of the wallet, lots of features need to be included to make this wallet as much complete as possible, so the next features planned to add are the following:
-- Add visualization of QR address
-- Add different wallet types
 - Add Multiwallet support
 - Add Multisignature accounts support
 - Add Mosaic transfer support
