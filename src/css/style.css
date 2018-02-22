@@ -3,10 +3,10 @@ body {
     font-size: 100%;
     width: 320px;
     height: 500px;
-    background-image: url('/img/background.png');
+    background: url("../img/background.png");
     background-size: cover;
     text-align: center;
-    color: #FFF;
+    color: #000;
     padding: 10px;
 }
 
@@ -66,16 +66,20 @@ p {
     height: 300px;
     border: 1px solid #ccc;
     overflow: auto;
+    margin-bottom: 20px;
 }
 
 .btn-1 {
-    margin: 5px;
-    background-color: #F27935;
-    border-radius: 30px;
+    margin-bottom: 15px;
+    padding: 10px;
+    border: 1px solid #000;
+    border-radius: 0px !important;
+    /* margin-top: 25px; */
+    width: 70%;
 }
 
 .btn-1:hover, .btn-1:focus {
-    color: #FFF;
+    color: rgba(0,0,0,0.7);
 }
 
 .error-message {
@@ -98,10 +102,12 @@ p {
 
 .fa-arrow-left {
     font-size: 25px;
-    color: white;
+    color: #fff;
+    -webkit-text-stroke: 1px #000;
 }
 
-.form-style-4 input[type=number],
+
+.-style-4 input[type=number],
 .form-style-4 input[type=button],
 .form-style-4 input[type=text],
 .form-style-4 input[type=password],
@@ -109,8 +115,7 @@ p {
 .form-style-4 label
 {
     font-size: 16px;
-    color: #fff;
-    margin: 5px;
+    color: #000;
 }
 .form-style-4 label {
     display:block;
@@ -122,7 +127,7 @@ p {
 }
 
 #recipient {
-    margin-top: 70px;
+    margin-top: 100px;
 }
 
 #export-wallet-button {
@@ -133,35 +138,26 @@ p {
 .form-style-4 input[type=number],
 .form-style-4 input[type=password]
 {
-    background: transparent;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border: none;
-    border-bottom: 1px dashed #83A4C5;
+    background-color: white;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid black;
     outline: none;
-    padding: 0px 0px 0px 0px;
     font-style: italic;
+    border-radius: 0px;
+    text-align: center;
 }
 .form-style-4 textarea,
 .form-style-4 input[type=password] {
     font-style: italic;
-    padding: 0px 0px 0px 0px;
-    background: transparent;
+    background-color: white;
     outline: none;
-    border: none;
-    border-bottom: 1px dashed #83A4C5;
+    border: 1px solid black;
     overflow: hidden;
     resize:none;
     height:20px;
 }
 
-.form-style-4 textarea:focus,
-.form-style-4 input[type=text]:focus,
-.form-style-4 input[type=number]:focus,
-.form-style-4 input[type=password]:focus
-{
-    border-bottom: 1px dashed #D9FFA9;
-}
 
 .form-style-4 input[type=number]::-webkit-input-placeholder,
 .form-style-4 input[type=button]::-webkit-input-placeholder,
@@ -171,7 +167,7 @@ p {
 .form-style-4 label::-webkit-input-placeholder
 {
     font-size: 16px;
-    color: #fff;
+    color: #ccc;
     text-align: center;
 }
 
@@ -179,8 +175,41 @@ p {
    background: url(http://i62.tinypic.com/15xvbd5.png) no-repeat 96% 0;
    height: 29px;
    overflow: hidden;
-   background-color: #F27935;
-   width: 240px;
+   background-color: #fff;
+   width: 50%;
    overflow:hidden;
-   border-radius: 25px;
+   margin-bottom: 20px;
 }
+.logoIni{
+    margin-top: 10px;
+    margin-left: 80px;
+}
+.underLogo{
+    margin-top: 60px;
+    text-align: center;
+}
+.form-control{
+    height: 40px !important;
+}
+.text-nav{
+    color: white;
+}
+
+.navbar-default{
+    background: url(../img/background2.png);
+}
+header{
+    position: absolute;
+}
+.pading-top{
+    padding-top: 40px;
+}
+
+.hidden {
+    display: none;
+}
+.error {
+    color: #d9534f;
+    font-size: 12px;
+}
+

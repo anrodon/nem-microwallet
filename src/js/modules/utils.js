@@ -2,6 +2,12 @@ const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const _hexEncodeArray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
 let unconfirmedTransactions = 0;
 
+let getTransactionMessage = function(tx) {
+    if (tx.message && tx.message.payload) return fmtHexToUtf8(tx.message.payload);
+    else return "";
+}
+
+
 /**
 * b32encode() Encode a string to base32
 *
@@ -200,14 +206,19 @@ function finishImport() {
     // Wallet base64 to word array
     let parsedWordArray = nem.crypto.js.enc.Base64.parse(fr.result);
     // Word array to wallet string
-    let walletStr = parsedWordArray.toString(nem.crypto.js.enc.Utf8);
-    // Wallet string to JSON object
-    wallet = JSON.parse(walletStr);
-    chrome.storage.local.clear(() => {
-        chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
-        clearIntervals();
-        renderHome();
-    });
+    try {
+        let walletStr = parsedWordArray.toString(nem.crypto.js.enc.Utf8);
+        // Wallet string to JSON object
+        wallet = JSON.parse(walletStr);
+        chrome.storage.local.clear(() => {
+            chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
+            clearIntervals();
+            renderHome();
+        });
+    } catch (e) {
+        $("#warning-msg").removeClass("hidden");
+        $("#warning-msg").addClass("visible");
+    }
 }
 
 /**
@@ -446,10 +457,14 @@ function sendTransaction() {
             }
             let common = getCommon(data.default_xem_wallet, password);
             const transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
+                console.log(transactionEntity);
+            console.log(common);
+            console.log(endpoint);
             try {
                 nem.model.transactions.send(common, transactionEntity, endpoint).then((res) => {
                     if (res.code >= 2) {
                         $('#an-error-message').show();
+                        return;
                     }
                     $('#success-message').show();
                     $('#recipient').val('');
