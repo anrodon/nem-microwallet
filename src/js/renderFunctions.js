@@ -92,7 +92,7 @@ function getNewBalanceAndTxs() {
             $('#unconfirmed-transactions-box').append(`
                 <div class="unconfirmed">
                     <p>Unconfirmed Transaction</p>
-                    <p>From: ${Address(toAddress(trx.transaction.signer, network))}</p>
+                    <p>From: ${fmtAddress(toAddress(trx.transaction.signer, network))}</p>
                     <p>To: ${fmtAddress(trx.transaction.recipient)}</p>
                     <p>Message: ${getTransactionMessage(trx.transaction)}</p>
                     <p>Amount: ${fmtNemValue(trx.transaction.amount)} XEM Fee: ${fmtNemValue(trx.transaction.fee)} XEM<p>

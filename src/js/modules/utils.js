@@ -448,7 +448,7 @@ function sendTransaction() {
         $('#wrong-amount-error-message').show();
     }
     else {
-        const transferTransaction = nem.model.objects.create("transferTransaction")(recipient, amount, message);
+        var transferTransaction = nem.model.objects.create("transferTransaction")(recipient, amount, message);
 
         chrome.storage.local.get('default_xem_wallet', function(data) {
             if (!isFromNetwork(data.default_xem_wallet.accounts[0].address, data.default_xem_wallet.accounts[0].network)) {
@@ -456,21 +456,22 @@ function sendTransaction() {
                 return;
             }
             let common = getCommon(data.default_xem_wallet, password);
-            const transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
-                console.log(transactionEntity);
+            var transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
+            console.log(transactionEntity);
             console.log(common);
             console.log(endpoint);
             try {
                 nem.model.transactions.send(common, transactionEntity, endpoint).then((res) => {
-                    if (res.code >= 2) {
-                        $('#an-error-message').show();
-                        return;
+                    console.log(res);
+                    if (res.code >= 2) $('#an-error-message').show();
+                    else if(res.code == 1) $('#success-message').show();
+                    else {
+                        $('#recipient').val('');
+                        $('#amount').val('');
+                        $('#message').val('');
+                        $('#password').val('');
                     }
-                    $('#success-message').show();
-                    $('#recipient').val('');
-                    $('#amount').val('');
-                    $('#message').val('');
-                    $('#password').val('');
+                    return;
                 });
             } catch(err) {
                 $('#an-error-message').show();
