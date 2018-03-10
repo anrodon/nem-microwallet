@@ -40,25 +40,25 @@ To build your own release (if you don't trust the one deployed at the Chrome Web
 ```
 git clone https://github.com/anrodon/nem-microwallet
 ```
-   
+
 3. Access the project folder with:
 
 ```
 cd nem-microwallet
 ```
-   
+
 4. Install all dependencies with:
 
 ```
 npm install
 ```
-  
+
 5. Build your release with:
 
 ```
-grunt build
+grunt
 ```
-  
+
 6. Enjoy your release at the `dist` folder.
 
 With this folder you can now load your own release to your Chrome Browser going to `chrome://extensions`, enabling developer mode and selecting your `dist` folder as an unpacked extension.
