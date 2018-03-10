@@ -69,6 +69,6 @@ This repository is under the GNU GENERAL PUBLIC LICENSE version 3.
 This program may be freely distributed, as long as this notice and documentation are distributed with the program.  This program is released as-is, with no warranty expressed or implied.
 
 ### Tips
-**XEM:** NBCAQE-TSUFWK-YR6RID-CYMDHA-R7J5DY-XKJU4M-QZOA
+**XEM:** NCIUW5A3SZB5O236YESXIK7PLBGEYHIVONUPRV3Y
 
-**BTC:** 1NcUf7wXtfeDai2Vc4iDwQsFCubmPq5vvW
+**BTC:** 1CMAywDRBVJ1WmdoN4DxDDgTTMabPEsRNZ
