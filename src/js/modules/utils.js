@@ -456,10 +456,16 @@ function sendTransaction() {
                 return;
             }
             let common = getCommon(data.default_xem_wallet, password);
-            var transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
-            console.log(transactionEntity);
-            console.log(common);
-            console.log(endpoint);
+            var transactionEntity = undefined;
+            if(data.default_xem_wallet.accounts[0].network === 104) {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.mainnet.id);
+            }
+            else if(data.default_xem_wallet.accounts[0].network === -104) {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
+            }
+            else {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.mijin.id);
+            }
             try {
                 nem.model.transactions.send(common, transactionEntity, endpoint).then((res) => {
                     console.log(res);

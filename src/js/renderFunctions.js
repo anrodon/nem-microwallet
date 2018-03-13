@@ -108,7 +108,7 @@ function getNewBalanceAndTxs() {
                             <div class="received">
                                 <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                                 <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${getTransactionMessage(trx.transaction)}</p>
+                                <p>Message: ${getTransactionMessage(tx.transaction)}</p>
                                 <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
                             </div>
                         `);
