@@ -2,6 +2,12 @@ const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 const _hexEncodeArray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
 let unconfirmedTransactions = 0;
 
+let getTransactionMessage = function(tx) {
+    if (tx.message && tx.message.payload) return fmtHexToUtf8(tx.message.payload);
+    else return "";
+}
+
+
 /**
 * b32encode() Encode a string to base32
 *
@@ -200,14 +206,19 @@ function finishImport() {
     // Wallet base64 to word array
     let parsedWordArray = nem.crypto.js.enc.Base64.parse(fr.result);
     // Word array to wallet string
-    let walletStr = parsedWordArray.toString(nem.crypto.js.enc.Utf8);
-    // Wallet string to JSON object
-    wallet = JSON.parse(walletStr);
-    chrome.storage.local.clear(() => {
-        chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
-        clearIntervals();
-        renderHome();
-    });
+    try {
+        let walletStr = parsedWordArray.toString(nem.crypto.js.enc.Utf8);
+        // Wallet string to JSON object
+        wallet = JSON.parse(walletStr);
+        chrome.storage.local.clear(() => {
+            chrome.storage.local.set({'default_xem_wallet': wallet}, function() {console.log("Wallet imported successfully.");});
+            clearIntervals();
+            renderHome();
+        });
+    } catch (e) {
+        $("#warning-msg").removeClass("hidden");
+        $("#warning-msg").addClass("visible");
+    }
 }
 
 /**
@@ -437,7 +448,7 @@ function sendTransaction() {
         $('#wrong-amount-error-message').show();
     }
     else {
-        const transferTransaction = nem.model.objects.create("transferTransaction")(recipient, amount, message);
+        var transferTransaction = nem.model.objects.create("transferTransaction")(recipient, amount, message);
 
         chrome.storage.local.get('default_xem_wallet', function(data) {
             if (!isFromNetwork(data.default_xem_wallet.accounts[0].address, data.default_xem_wallet.accounts[0].network)) {
@@ -445,17 +456,28 @@ function sendTransaction() {
                 return;
             }
             let common = getCommon(data.default_xem_wallet, password);
-            const transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
+            var transactionEntity = undefined;
+            if(data.default_xem_wallet.accounts[0].network === 104) {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.mainnet.id);
+            }
+            else if(data.default_xem_wallet.accounts[0].network === -104) {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.testnet.id);
+            }
+            else {
+                transactionEntity = nem.model.transactions.prepare("transferTransaction")(common, transferTransaction, nem.model.network.data.mijin.id);
+            }
             try {
                 nem.model.transactions.send(common, transactionEntity, endpoint).then((res) => {
-                    if (res.code >= 2) {
-                        $('#an-error-message').show();
+                    console.log(res);
+                    if (res.code >= 2) $('#an-error-message').show();
+                    else if(res.code == 1) $('#success-message').show();
+                    else {
+                        $('#recipient').val('');
+                        $('#amount').val('');
+                        $('#message').val('');
+                        $('#password').val('');
                     }
-                    $('#success-message').show();
-                    $('#recipient').val('');
-                    $('#amount').val('');
-                    $('#message').val('');
-                    $('#password').val('');
+                    return;
                 });
             } catch(err) {
                 $('#an-error-message').show();

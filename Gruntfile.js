@@ -37,7 +37,8 @@ module.exports = grunt => {
                         src: [
                             '*.html',
                             'img/**/*.*',
-                            'fonts/**/*.*'
+                            'fonts/**/*.*',
+                            'manifest.json'
                         ]
                     },
                     {

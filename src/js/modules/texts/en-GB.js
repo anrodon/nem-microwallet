@@ -32,3 +32,4 @@ const wrongAddressText = "Recipient address is invalid";
 const wrongAmountText = "Amount is invalid";
 const anErrorOcurredText = "An error ocurred sending the transaction";
 const showAccountInfoQRText = "Show QR Address";
+const errorImportWalletText= "Incorrect wallet file";
