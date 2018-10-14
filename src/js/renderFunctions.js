@@ -396,9 +396,10 @@ function renderLogin() {
     $('body').append(`
         <!-- LOGIN PAGE -->
         <div id="login-page">
-            <h1>${appTitleText}</h1>
-            <img src="../img/nem-128.png" class="img-responsive logoIni">
-            <h5>${appClaimText}</h5>
+            <img src="../img/nem-title.png" class="img-responsive titleIni">
+            <img src="../img/nem-white.png" class="img-responsive logoIni">
+            <h4 class="textIni">${appTitleText}</h4>
+            <h4 class="textIni">${appClaimText}</h4>
             <div class="row underLogo">
                 <div class="col-sm-12">
                     <button id="import-wallet" class="btn btn-1">${importWalletText}</button>
@@ -434,6 +435,7 @@ function renderNewTransaction() {
         <!-- NEW TRANSACTION PAGE -->
         <header>
             <div class="navbar navbar-default navbar-fixed-top row">
+                <a id="to-home"><h1><</h1></a>
                 <h1 class="text-nav">${newTransactionText}</h1>
             </div>
         </header>
@@ -450,7 +452,6 @@ function renderNewTransaction() {
             <p class="error-message" id="an-error-message">${anErrorOcurredText}</p>
             <p class="error-message" id="wrong-amount-error-message">${wrongAmountText}</p>
         </div>
-        <a id="to-home"><i class="fa fa-arrow-left arrow-nav" aria-hidden="true" class="arrow-nav"></i></a>
         <!-- END NEW TRANSACTION PAGE -->`
     );
     $("#send-transaction-button").click(() => {
@@ -510,6 +511,7 @@ function renderSettings() {
         <!-- SETTINGS PAGE -->
         <header>
             <div class="navbar navbar-default navbar-fixed-top">
+                <a id="to-home"><h1><</h1></a>
                 <h1 class="text-nav">${settingsText}</h1>
              </div>
         </header>
@@ -526,7 +528,6 @@ function renderSettings() {
                 </div>
             </div>
         </div>
-        <a id="to-home"><i class="fa fa-arrow-left arrow-nav" aria-hidden="true" class="arrow-nav"></i></a>
 
         <!-- END SETTINGS PAGE -->`
     );

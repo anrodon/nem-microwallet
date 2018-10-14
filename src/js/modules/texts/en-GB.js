@@ -1,5 +1,5 @@
 const appTitleText = "NEM MicroWallet";
-const appClaimText = "Chrome NEM Wallet Extension";
+const appClaimText = "Chrome Extension";
 const newTransactionText = "New transaction";
 const settingsText = "Settings";
 const importWalletText = "Import wallet";

@@ -3,7 +3,6 @@ body {
     font-size: 100%;
     width: 320px;
     height: 500px;
-    background: url("../img/background.png");
     background-size: cover;
     text-align: center;
     color: #000;
@@ -72,10 +71,12 @@ p {
 .btn-1 {
     margin-bottom: 15px;
     padding: 10px;
-    border: 1px solid #000;
-    border-radius: 0px !important;
+    /* border: 1px solid #000; */
+    color: white;
+    background-color: #00C4B3;
+    border-radius: 5px !important;
     /* margin-top: 25px; */
-    width: 70%;
+    width: 60%;
 }
 
 .btn-1:hover, .btn-1:focus {
@@ -103,7 +104,7 @@ p {
 .fa-arrow-left {
     font-size: 25px;
     color: #fff;
-    -webkit-text-stroke: 1px #000;
+    -webkit-text-stroke: 1px #848484;
 }
 
 
@@ -115,7 +116,7 @@ p {
 .form-style-4 label
 {
     font-size: 16px;
-    color: #000;
+    color: #848484;
 }
 .form-style-4 label {
     display:block;
@@ -141,10 +142,10 @@ p {
     background-color: white;
     margin-top: 15px;
     margin-bottom: 15px;
-    border: 1px solid black;
+    border: 1px solid  ;
     outline: none;
     font-style: italic;
-    border-radius: 0px;
+    border-radius: 5px;
     text-align: center;
 }
 .form-style-4 textarea,
@@ -152,7 +153,7 @@ p {
     font-style: italic;
     background-color: white;
     outline: none;
-    border: 1px solid black;
+    border: 1px solid #848484;
     overflow: hidden;
     resize:none;
     height:20px;
@@ -181,11 +182,21 @@ p {
    margin-bottom: 20px;
 }
 .logoIni{
-    margin-top: 10px;
-    margin-left: 80px;
+    display: inline !important;
+    max-width: 40%;
+    padding-bottom: : 15px;
+}
+.titleIni{
+    max-width: 60%;
+    padding-bottom: 25px;
+    display: inline !important;
+    padding-top: 25px;
+}
+.textIni{
+    color: #848484;
 }
 .underLogo{
-    margin-top: 60px;
+    margin-top: 40px;
     text-align: center;
 }
 .form-control{
@@ -196,7 +207,7 @@ p {
 }
 
 .navbar-default{
-    background: url(../img/background2.png);
+    background-color: #00C4B3;
 }
 header{
     position: absolute;
@@ -212,4 +223,14 @@ header{
     color: #d9534f;
     font-size: 12px;
 }
+h1{
+    font-size:30px !important;
+}
 
+#to-home{
+    float: left;
+    color: white;
+    text-decoration: none;
+    margin-right: -45px;
+    margin-left: 25px;
+}
