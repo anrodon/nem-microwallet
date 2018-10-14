@@ -152,7 +152,7 @@ function getNewBalanceAndTxs() {
 /**
 * renderCreateBrainWallet() Renders the create brain wallet page
 *
-*/
+
 function renderCreateBrainWallet() {
     $('body').empty();
     $('body').append(`
@@ -193,7 +193,7 @@ function renderCreateBrainWallet() {
     });
     $("#to-login").click(() => renderCreateWallet());
 }
-
+*/
 /**
 * renderCreatePRNGWallet() Renders the create PRNG wallet page
 *
@@ -248,7 +248,7 @@ function renderCreateWallet() {
         </header>
         <div id="create-wallet-page" class="form-style-4 pading-top">
             <button id="create-prng-wallet-button" class="btn btn-1">${createPRNGWalletText}</button>
-            <button id="create-brain-wallet-button" class="btn btn-1">${createBrainWalletText}</button>
+            <!-- <button id="create-brain-wallet-button" class="btn btn-1">${createBrainWalletText}</button> -->
             <button id="import-key-button" class="btn btn-1">${importKeyText}</button>
         </div>
         <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
