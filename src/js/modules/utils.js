@@ -3,10 +3,30 @@ const _hexEncodeArray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 
 let unconfirmedTransactions = 0;
 
 let getTransactionMessage = function(tx) {
-    if (tx.message && tx.message.payload) return fmtHexToUtf8(tx.message.payload);
+    if (tx.message && tx.message.plain) return fmtHexToUtf8(tx.message.plain());
     else return "";
 }
 
+const getTransferTransaction = function (transaction) {
+    if (transaction.type === nem.TransactionTypes.MULTISIG) {
+        return transaction.otherTransaction;
+    } else if (transaction.type === nem.TransactionTypes.TRANSFER) {
+        return transaction;
+    }
+    else return null;
+}
+
+const getAllTransactions = function (receiver) {
+    const accountHttp = new nem.AccountHttp();
+    const pageable = accountHttp.incomingTransactionsPaginated(receiver, {pageSize: 100});
+    return pageable
+        .map((allTransactions) => {
+            pageable.nextPage();
+             return allTransactions.filter((t) => (t.type === nem.TransactionTypes.MULTISIG || t.type === nem.TransactionTypes.TRANSFER));
+        }).reduce((acc, page) => {
+            return acc.concat(page);
+        }, []).first().toPromise();
+};
 
 /**
 * b32encode() Encode a string to base32
@@ -364,56 +384,6 @@ function importWallet() {
 }
 
 /**
- * Check if an input amount is valid
- *
- * @param {string} n - The number as a string
- *
- * @return {boolean} - True if valid, false otherwise
- */
-let isAmountValid = function(n) {
-    // Force n as a string and replace decimal comma by a dot if any
-    var nn = Number(n.toString().replace(/,/g, '.'));
-    return !Number.isNaN(nn) && Number.isFinite(nn) && nn >= 0;
-}
-
-/**
-* Check if an address is from a specified network
-*
-* @param {string} _address - An address
-* @param {number} networkId - A network id
-*
-* @return {boolean} - True if address is from network, false otherwise
-*/
-let isFromNetwork = function(_address, networkId) {
-    let address = _address.toString().toUpperCase().replace(/-/g, '');
-    let a = address[0];
-    return id2Char(networkId) === a;
-};
-
-/**
-* Check if an address is valid
-*
-* @param {string} _address - An address
-*
-* @return {boolean} - True if address is valid, false otherwise
-*/
-let isValid = function(_address) {
-    let address = _address.toString().toUpperCase().replace(/-/g, '');
-    address = _address.toString().toUpperCase().replace(/ /g, '');
-    if (!address || address.length !== 40) {
-        return false;
-    }
-    let decoded = ua2hex(b32decode(address));
-    let versionPrefixedRipemd160Hash = nem.crypto.js.enc.Hex.parse(decoded.slice(0, 42));
-    let tempHash = nem.crypto.js.SHA3(versionPrefixedRipemd160Hash, {
-        outputLength: 256
-    });
-    let stepThreeChecksum = nem.crypto.js.enc.Hex.stringify(tempHash).substr(0, 8);
-
-    return stepThreeChecksum === decoded.slice(42);
-};
-
-/**
 * logout() Logs the user out of the app
 *
 */
@@ -486,45 +456,3 @@ function sendTransaction() {
     }
 }
 
-/**
-* Convert a public key to a NEM address
-*
-* @param {string} publicKey - A public key
-* @param {number} networkId - A network id
-*
-* @return {string} - The NEM address
-*/
-let toAddress = function(publicKey, networkId) {
-    let binPubKey = nem.crypto.js.enc.Hex.parse(publicKey);
-    let hash = nem.crypto.js.SHA3(binPubKey, {
-        outputLength: 256
-    });
-    let hash2 = nem.crypto.js.RIPEMD160(hash);
-    // 98 is for testnet
-    let networkPrefix = id2Prefix(networkId);
-    let versionPrefixedRipemd160Hash = networkPrefix + nem.crypto.js.enc.Hex.stringify(hash2);
-    let tempHash = nem.crypto.js.SHA3(nem.crypto.js.enc.Hex.parse(versionPrefixedRipemd160Hash), {
-        outputLength: 256
-    });
-    let stepThreeChecksum = nem.crypto.js.enc.Hex.stringify(tempHash).substr(0, 8);
-    let concatStepThreeAndStepSix = hex2a(versionPrefixedRipemd160Hash + stepThreeChecksum);
-    let ret = b32encode(concatStepThreeAndStepSix);
-    return ret;
-};
-
-/**
-* ua2hex() Converts a decoded string to an hex string
-*
-* @param {Uint8Array} ua - Decoded string
-*
-* @return {string} - The hex string
-*/
-function ua2hex(ua) {
-    let s = '';
-    for (let i = 0; i < ua.length; i++) {
-        let code = ua[i];
-        s += _hexEncodeArray[code >>> 4];
-        s += _hexEncodeArray[code & 0x0F];
-    }
-    return s;
-};

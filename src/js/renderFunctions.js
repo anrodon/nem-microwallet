@@ -1,49 +1,77 @@
+'use strict';
+// var nem = require("nem-sdk").default;
+var nem = require("nem-library");
+
+function initLibrary(network) {
+    nem.NEMLibrary.bootstrap(network);
+}
+
+let endpoint = undefined;
+let wallet = undefined;
+
+
+chrome.storage.local.get('default_xem_wallet', function(data) {
+    wallet = data.default_xem_wallet;
+    if (wallet == undefined) renderLogin();
+    else {
+        initLibrary(wallet.network);
+        renderHome();
+    }
+});
+
+
 /**
 * getBalanceAndTxs() Gets and prints the balance and transactions of an address
-*
 */
 function getBalanceAndTxs() {
-    let address = wallet.accounts[0].address;
-    let network = wallet.accounts[0].network;
-    nem.com.requests.account.mosaics.owned(endpoint, address).then((res) => {
-        const data = res.data;
-        let balance = fmtNemValue(data[0].quantity) + ' ' + data[0].mosaicId.name;
-        $('#p-balance').text(balance.toUpperCase());
+    const address = wallet.address;
+    const network = wallet.network;
+    const accountHttp = new AccountHttp();
+    accountHttp.getFromAddress(address).first().toPromise()
+    .then((accountInfoWithMd) => {
+        let balance = accountInfoWithMd.balance.balance * 1000000;
+        $('#p-balance').text(balance.toString() + ' XEM'); 
     });
-    nem.com.requests.account.transactions.unconfirmed(endpoint, address).then((resp) => {
-        unconfirmedTransactions = resp.data.length;
-        for (const trx of resp.data) {
+
+    // get unconfirmed
+    accountHttp.unconfirmedTransactions(address).first().toPromise()
+    .then(unconfirmedTransactions => {
+        unconfirmedTransactions.forEach(tx => {
+            const t = getTransferTransaction(t);
+            if (!t) return;
             $('#unconfirmed-transactions-box').append(`
                 <div class="unconfirmed">
                     <p>Unconfirmed Transaction</p>
-                    <p>From: ${fmtAddress(toAddress(trx.transaction.signer, network))}</p>
-                    <p>To: ${fmtAddress(trx.transaction.recipient)}</p>
-                    <p>Message: ${getTransactionMessage(trx.transaction)}</p>
-                    <p>Amount: ${fmtNemValue(trx.transaction.amount)} XEM Fee: ${fmtNemValue(trx.transaction.fee)} XEM<p>
+                    <p>From: ${t.signer.address.pretty()}</p>
+                    <p>To: ${t.recipient.pretty()}</p>
+                    <p>Message: ${getTransactionMessage(t)}/p>
+                    <p>Amount: ${t.xem().quantity * 1000000} XEM Fee: ${t.fee * 1000000} XEM<p>
                 </div>
             `);
-        }
-        totalTransactions = 0;
-        nem.com.requests.account.transactions.all(endpoint, address).then((res) => {
-            for (const tx of res.data) {
-                totalTransactions += 1;
-                if (tx.transaction.recipient == address) {
-                    if (network == testnetId) {
+        });
+        // get comfirmed
+        getAllTransactions(address)
+        .then(transactions => {
+            transactions.forEach(tx => {
+                const t = getTransferTransaction(tx);
+                if (!t) return;
+                if (t.recipient == address) {
+                    if (network == nem.NetworkTypes.TEST_NET) {
                         $('#last-transactions-box').append(`
                             <div class="received">
-                                <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                                <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${getTransactionMessage(tx.transaction)}</p>
-                                <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
+                                <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                                <p>From: ${t.signer.address.pretty()}</p>
+                                <p>Message: ${getTransactionMessage(t)}</p>
+                                <p>Amount: ${t.xem().quantity * 1000000} XEM Fee: ${t.fee * 1000000} XEM<p>
                             </div>
                         `);
                     } else {
                         $('#last-transactions-box').append(`
                             <div class="received">
-                                <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                                <p>From: ${fmtAddress(toAddress(tx.transaction.signer, network))}</p>
-                                <p>Message: ${getTransactionMessage(tx.transaction)}</p>
-                                <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
+                                <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                                <p>From: ${t.signer.address.pretty()}</p>
+                                <p>Message: ${getTransactionMessage(t)}</p>
+                                <p>Amount: ${t.xem().quantity * 1000000} XEM Fee: ${t.fee * 1000000} XEM<p>
                             </div>
                         `);
                     }
@@ -51,24 +79,24 @@ function getBalanceAndTxs() {
                     if (network == testnetId) {
                         $('#last-transactions-box').append(`
                             <div class="sent">
-                                <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                                <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${getTransactionMessage(tx.transaction)}</p>
-                                <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
+                                <a class="tx-link" href="http://bob.nem.ninja:8765/#/transfer/${t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                                <p>To: ${fmtAddress(tx.recipient.pretty())}</p>
+                                <p>Message: ${getTransactionMessage(t)}</p>
+                                <p>Amount: ${t.xem().quantity * 1000000} XEM Fee: ${t.fee * 1000000} XEM<p>
                             </div>
                         `);
                     } else {
                         $('#last-transactions-box').append(`
                             <div class="sent">
-                                <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${tx.meta.hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                                <p>To: ${fmtAddress(tx.transaction.recipient)}</p>
-                                <p>Message: ${getTransactionMessage(tx.transaction)}</p>
-                                <p>Amount: ${fmtNemValue(tx.transaction.amount)} XEM Fee: ${fmtNemValue(tx.transaction.fee)} XEM<p>
+                                <a class="tx-link" href="http://chain.nem.ninja/#/transfer/${t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                                <p>To: ${fmtAddress(tx.recipient.pretty())}</p>
+                                <p>Message: ${getTransactionMessage(t)}</p>
+                                <p>Amount: ${t.xem().quantity * 1000000} XEM Fee: ${t.fee * 1000000} XEM<p>
                             </div>
                         `);
                     }
                 }
-            }
+            });
         });
     });
 }
@@ -150,51 +178,6 @@ function getNewBalanceAndTxs() {
 }
 
 /**
-* renderCreateBrainWallet() Renders the create brain wallet page
-*
-
-function renderCreateBrainWallet() {
-    $('body').empty();
-    $('body').append(`
-        <!-- CREATE BRAIN WALLET PAGE -->
-        <header>
-            <div class="navbar navbar-default navbar-fixed-top">
-                <h1 class="text-nav">${createBrainWalletText}</h1>
-             </div>
-        </header>
-        <div id="create-brain-wallet-page" class="form-style-4 pading-top">
-            <input type="text" id="wallet-name" placeholder="${walletNameText}" class="form-control" style="margin-top: 95px;"></input>
-            <input type="password" id="wallet-passphrase" placeholder="${passphraseText}" class="form-control"></input>
-            <input type="password" id="wallet-confirm-passphrase" placeholder="${confirmPassphraseText}" class="form-control"></input>
-            <select id="wallet-network" class="styled-select">
-                <option value="${testnetId}">${testnetText}</option>
-                <option value="${mainnetId}">${mainnetText}</option>
-                <option value="${mijinId}">${mijinText}</option>
-            </select>
-            <button id="create-account-button" class="btn btn-1">${createWalletText}</button>
-            <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
-            <p class="error-message" id="passphrases-incorrect">${passphrasesMustBeEqualText}</p>
-        </div>
-        <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
-        <!-- END CREATE BRAIN WALLET PAGE -->`
-    );
-    $("#create-account-button").click(() => {
-        const walletName = $('#wallet-name').val();
-        const walletPassphrase = $('#wallet-passphrase').val();
-        if (walletName == "" || walletPassphrase == "") {
-            $('#all-fields-required').show();
-            setInterval(function(){ $('#all-fields-required').hide(); }, 5000);
-        }
-        else if ($('#wallet-passphrase').val() != $('#wallet-confirm-passphrase').val()) {
-            $('#passphrases-incorrect').show();
-            setInterval(function(){ $('#passphrases-incorrect').hide(); }, 5000);
-        }
-        else createBrainWallet();
-    });
-    $("#to-login").click(() => renderCreateWallet());
-}
-*/
-/**
 * renderCreatePRNGWallet() Renders the create PRNG wallet page
 *
 */
@@ -259,42 +242,6 @@ function renderCreateWallet() {
     $("#import-key-button").click(() => renderImportPrivateKey());
     $("#to-login").click(() => renderLogin());
 }
-
-/**
-* renderImportWallet() Renders the import wallet page
-*
-*/
-/*
-function renderImportWallet() {
-    $('body').empty();
-    $('body').append(`
-        <!-- IMPORT WALLET PAGE -->
-         <header>
-            <div class="navbar navbar-default navbar-fixed-top">
-                <h1 class="text-nav">${importWalletText}</h1>
-             </div>
-        </header>
-        <div id="import-wallet-page">
-            <div class="row vertically-centered">
-                <div class="col-sm-12">
-                    <input type="file" id="wallet-file" class="file-selector">
-                </div>
-                <div class="col-sm-12">
-                    <button id="import-wallet-button" class="btn btn-1">${importWalletText}</button>
-                </div>
-                <div class="col-sm-12">
-                    <p class="error-message" id="all-fields-required">${allFieldsRequiredText}</p>
-                </div>
-                <div class="col-sm-12">
-                    <a id="to-login"><i class="fa fa-arrow-left" aria-hidden="true"></i><a>
-                </div>
-            </div>
-        </div>
-        <!-- END IMPORT WALLET PAGE -->`
-    );
-    $("#import-wallet-button").click(() => importWallet());
-    $("#to-login").click(() => renderLogin());
-}*/
 
 /**
 * renderHome() Renders the home page
