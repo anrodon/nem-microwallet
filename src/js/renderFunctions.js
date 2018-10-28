@@ -6,6 +6,7 @@ const nem = require("nem-library");
 const trezor = require("nem-trezor");
 
 let initializedLibrary = false;
+let isTrezor = false;
 
 function initLibrary(network) {
     if (initializedLibrary) return;
@@ -140,6 +141,30 @@ function exportWallet() {
             document.body.removeChild(elem);
         }
     });
+}
+
+function trezorLogin() {
+    try {
+        isTrezor = true;
+        trezor.TrezorAccount.getAccount(0)
+        .flatMap((account) => {
+          console.log(account);
+          // 2. Create Transaction object
+          // For more information on Transaction types and their usage check out the nem-library documentation
+          const trans: Transaction = TransferTransaction.create(
+            TimeWindow.createWithDeadline(),
+            new Address("TBEJ3L4MKNRZRY7PR5CO35746QRCR32AHE6UMTQN"),
+            new XEM(10),
+            PlainMessage.create("hello from trezor"),
+          );
+          // 3. Sign and serialize the transaction from the trezor device. This will prompt for confirmation on the device.
+          return account.signTransaction(trans);
+        })
+        // Announce the transaction to the network
+        .flatMap((signedTransaction) => transactionHttp.announceTransaction(signedTransaction))
+        // Print the response
+        .subscribe((response) => console.log(response), (err) => console.error(err));
+    }
 }
 
 /**
@@ -576,6 +601,9 @@ function renderLogin() {
                 <div class="col-sm-12">
                     <button id="create-wallet" class="btn btn-1">${createWalletText}</button>
                 </div>
+                <div class="col-sm-12">
+                    <button id="trezor-login" class="btn btn-1">${trezorLoginText}</button>
+                </div>
             </div>
             <div id="warning-msg" class="row error hidden">
                 <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> ${errorImportWalletText}
@@ -590,6 +618,9 @@ function renderLogin() {
     }
     $("#import-wallet").click(() => {
         $("#wallet-file").click();
+    });
+    $("#trezor-login").click(() => {
+        trezorLogin();
     });
 }
 
