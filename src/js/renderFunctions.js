@@ -6,6 +6,8 @@ const nem = require("nem-library");
 const trezor = require("nem-trezor");
 
 let initializedLibrary = false;
+let trezorAccount;
+let wallet;
 let isTrezor = false;
 
 function initLibrary(network) {
@@ -145,25 +147,22 @@ function exportWallet() {
 
 function trezorLogin() {
     try {
+        initLibrary(nem.NetworkTypes.MAIN_NET);
         isTrezor = true;
-        trezor.TrezorAccount.getAccount(0)
-        .flatMap((account) => {
+        trezor.TrezorAccount.getAccount(0).toPromise()
+        .then((account) => {
           console.log(account);
-          // 2. Create Transaction object
-          // For more information on Transaction types and their usage check out the nem-library documentation
-          const trans: Transaction = TransferTransaction.create(
-            TimeWindow.createWithDeadline(),
-            new Address("TBEJ3L4MKNRZRY7PR5CO35746QRCR32AHE6UMTQN"),
-            new XEM(10),
-            PlainMessage.create("hello from trezor"),
-          );
-          // 3. Sign and serialize the transaction from the trezor device. This will prompt for confirmation on the device.
-          return account.signTransaction(trans);
+          trezorAccount = account;
+          renderHome();
+        }).catch((e) => {
+            // TODO: warning
+            console.log(e);
+            console.log("error loging in with trezor");
         })
-        // Announce the transaction to the network
-        .flatMap((signedTransaction) => transactionHttp.announceTransaction(signedTransaction))
-        // Print the response
-        .subscribe((response) => console.log(response), (err) => console.error(err));
+    } catch (e) {
+        // TODO: warning
+        console.log(e);
+        console.log("error loging in with trezor");
     }
 }
 
@@ -203,6 +202,7 @@ function importWallet() {
 */
 function logout() {
     chrome.storage.local.clear();
+    trezorAccount = undefined;
     renderHome();
 }
 // logout();
@@ -244,7 +244,10 @@ function sendTransaction() {
     const recipient = new nem.Address($('#recipient').val());
     const amount = ($('#amount').val()) * 1000000;
     const message = $('#message').val();
-    const password = $('#password').val();
+    let password;
+    if (!isTrezor) {
+        password = $('#password').val();
+    }
 
     if (recipient == "" || amount == "") {
         $('#incomplete-error-message').show();
@@ -266,37 +269,53 @@ function sendTransaction() {
             TimeWindow.createWithDeadline(),
             new Address(recipient),
             new XEM(amount),
-            PlainMessage.create("message")
+            PlainMessage.create(message)
         );
 
-        chrome.storage.local.get('default_xem_wallet', function(data) {
+        if (isTrezor) {
             try {
                 const transactionHttp = new nem.TransactionHttp();
-                const account = wallet.open(password);
-                const signedTransaction = account.signTransaction(transferTransaction);
 
-                transactionHttp.announceTransaction(signedTransaction)
-                .toPromise().then(x => {
-                    $('#success-message').show();
-                    $('#recipient').val('');
-                    $('#amount').val('');
-                    $('#message').val('');
-                    $('#password').val('');
-                    return;
+                trezorAccount.signTransaction(transferTransaction).toPromise()
+                .then((signedTransaction) => {
+                    transactionHttp.announceTransaction(signedTransaction).toPromise()
+                    .then(x => {
+                        $('#success-message').show();
+                        $('#recipient').val('');
+                        $('#amount').val('');
+                        $('#message').val('');
+                        $('#password').val('');
+                        return;
+                    });
                 });
             } catch(err) {
                 $('#an-error-message').show();
-    		};
-        });
+            };
+        } else {
+            chrome.storage.local.get('default_xem_wallet', function(data) {
+                try {
+                    const transactionHttp = new nem.TransactionHttp();
+                    const account = wallet.open(password);
+                    const signedTransaction = account.signTransaction(transferTransaction);
+    
+                    transactionHttp.announceTransaction(signedTransaction)
+                    .toPromise().then(x => {
+                        $('#success-message').show();
+                        $('#recipient').val('');
+                        $('#amount').val('');
+                        $('#message').val('');
+                        $('#password').val('');
+                        return;
+                    });
+                } catch(err) {
+                    $('#an-error-message').show();
+                };
+            });
+        }
     }
 }
 
 //----------------------------------------------------------------------------------------------------------------------------//
-
-// var nem = require("nem-sdk").default;
-// var nem = require("nem-library");
-
-let wallet = undefined;
 
 chrome.storage.local.get('default_xem_wallet', function(data) {
     if (data.default_xem_wallet == undefined) renderLogin();
@@ -309,8 +328,8 @@ chrome.storage.local.get('default_xem_wallet', function(data) {
 
 function generateTransactionItem (tx) {
     const t = getTransferTransaction(tx);
-    const address = wallet.address;
-    const network = wallet.network;
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
     if (!t) return;
     const url = (network == nem.NetworkTypes.TEST_NET) ? "http://bob.nem.ninja:8765/#/transfer/" : "http://chain.nem.ninja/#/transfer/";
     const classType = (t.recipient == address) ? "received" : "sent";
@@ -348,8 +367,8 @@ function generateTransactionItem (tx) {
 * getBalanceAndTxs() Gets and prints the balance and transactions of an address
 */
 function getBalanceAndTxs() {
-    const address = wallet.address;
-    const network = wallet.network;
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
     const obs = accountHttp.getFromAddress(address);
@@ -391,8 +410,8 @@ function getBalanceAndTxs() {
 *
 */
 function getNewBalanceAndTxs() {
-    const address = wallet.address;
-    const network = wallet.network;
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
     accountHttp.getFromAddress(address).toPromise()
@@ -503,11 +522,13 @@ function renderCreateWallet() {
 function renderHome() {
     $('body').empty();
     chrome.storage.local.get('default_xem_wallet', function(data) {
-        if (data.default_xem_wallet == undefined) {
+        if (data.default_xem_wallet == undefined && trezorAccount == undefined) {
             renderLogin();
         } else {
-            wallet = readWalletFile(data.default_xem_wallet);
-            const network = wallet.network;
+            if (!isTrezor) {
+                wallet = readWalletFile(data.default_xem_wallet);
+            }
+            const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
             initLibrary(network);
             $('body').append(`
                 <!-- HOME PAGE -->
@@ -532,7 +553,7 @@ function renderHome() {
             );
             $("#to-new-transaction-button").click(() => renderNewTransaction());
             $("#to-settings-button").click(() => renderSettings());
-            const address = wallet.address;
+            const address = (isTrezor) ? trezorAccount.address : wallet.address;
             $('#p-address').text(address.pretty());
             getBalanceAndTxs();
             clearIntervals();
@@ -631,6 +652,7 @@ function renderLogin() {
 */
 function renderNewTransaction() {
     $('body').empty();
+    // TODO: no password field when trezor
     $('body').append(`
         <!-- NEW TRANSACTION PAGE -->
         <header>
@@ -677,15 +699,16 @@ function renderAccountInfoQR() {
         <a id="to-settings"><i class="fa fa-arrow-left" aria-hidden="true" style="margin-top: 50px;"></i><a>
         <!-- END QR ADDRESS PAGE -->`
     );
-    const address = wallet.address;
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
     $('#h4-address').text(address.pretty());
     // Account info model for QR
     const accountInfoModelQR = {
-        "v": wallet.network === nem.NetworkTypes.TEST_NET ? 1 : 2,
+        "v": network === nem.NetworkTypes.TEST_NET ? 1 : 2,
         "type": 1,
         "data": {
             "addr": address.plain(),
-            "name": wallet.name
+            "name": (isTrezor) ? "Trezor" : wallet.name
         }
     }
     const text = JSON.stringify(accountInfoModelQR);
@@ -731,6 +754,7 @@ function renderSettings() {
 
         <!-- END SETTINGS PAGE -->`
     );
+    // TODO: block export wallet if using Trezor
     $("#export-wallet-button").click(() => exportWallet());
     $("#show-account-info-qr-button").click(() => renderAccountInfoQR());
     $("#logout-button").click(() => logout());
