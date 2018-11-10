@@ -5,6 +5,7 @@ let unconfirmedTransactions = 0;
 const nem = require("nem-library");
 const trezor = require("nem-trezor");
 
+const trezorNetwork = nem.NetworkTypes.TEST_NET;
 let initializedLibrary = false;
 let trezorAccount;
 let wallet;
@@ -32,7 +33,7 @@ const getTransferTransaction = function (transaction) {
 
 const getAllTransactions = function (receiver) {
     const accountHttp = new nem.AccountHttp();
-    const pageable = accountHttp.incomingTransactionsPaginated(receiver, {pageSize: 100});
+    const pageable = accountHttp.allTransactionsPaginated(receiver, {pageSize: 100});
     const all = [];
     return new Promise((resolve, reject) => {
         pageable.subscribe(x => {
@@ -147,7 +148,7 @@ function exportWallet() {
 
 function trezorLogin() {
     try {
-        initLibrary(nem.NetworkTypes.MAIN_NET);
+        initLibrary(trezorNetwork);
         isTrezor = true;
         trezor.TrezorAccount.getAccount(0).toPromise()
         .then((account) => {
@@ -236,13 +237,23 @@ let isAmountValid = function(n) {
     return !Number.isNaN(nn) && Number.isFinite(nn) && nn >= 0;
 }
 
+// get real value of a mosaic
+let getMosaicValue = function(value, mosaicId) {
+    const mosaicHttp = new nem.MosaicHttp();
+    return mosaicHttp.getMosaicDefinition(mosaicId).toPromise()
+    .then(definition => {
+        const div = definition.properties.divisibility;
+        return (value / (10 ** div));
+    });
+}
+
 /**
 * sendTransaction() Sends a transaction with the parameters specified by the user
 *
 */
 function sendTransaction() {
-    const recipient = new nem.Address($('#recipient').val());
-    const amount = ($('#amount').val()) * 1000000;
+    const recipient = $('#recipient').val();
+    const amount = ($('#amount').val());
     const message = $('#message').val();
     let password;
     if (!isTrezor) {
@@ -266,10 +277,10 @@ function sendTransaction() {
     }
     else {
         const transferTransaction = nem.TransferTransaction.create(
-            TimeWindow.createWithDeadline(),
-            new Address(recipient),
-            new XEM(amount),
-            PlainMessage.create(message)
+            nem.TimeWindow.createWithDeadline(),
+            new nem.Address(recipient),
+            new nem.XEM(amount),
+            nem.PlainMessage.create(message)
         );
 
         if (isTrezor) {
@@ -295,9 +306,8 @@ function sendTransaction() {
             chrome.storage.local.get('default_xem_wallet', function(data) {
                 try {
                     const transactionHttp = new nem.TransactionHttp();
-                    const account = wallet.open(password);
+                    const account = wallet.open(new nem.Password(password));
                     const signedTransaction = account.signTransaction(transferTransaction);
-    
                     transactionHttp.announceTransaction(signedTransaction)
                     .toPromise().then(x => {
                         $('#success-message').show();
@@ -308,6 +318,7 @@ function sendTransaction() {
                         return;
                     });
                 } catch(err) {
+                    console.log(err);
                     $('#an-error-message').show();
                 };
             });
@@ -329,37 +340,103 @@ chrome.storage.local.get('default_xem_wallet', function(data) {
 function generateTransactionItem (tx) {
     const t = getTransferTransaction(tx);
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
-    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
+    const network = (isTrezor) ? trezorNetwork : wallet.network;
+    // console.log("transaction -> ", t);
+    // console.log("own address -> ", address);
     if (!t) return;
     const url = (network == nem.NetworkTypes.TEST_NET) ? "http://bob.nem.ninja:8765/#/transfer/" : "http://chain.nem.ninja/#/transfer/";
-    const classType = (t.recipient == address) ? "received" : "sent";
-    const fromOrTo = (t.recipient == address) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
+    let classType = (t.recipient.plain() === address.plain()) ? "received" : "sent";
+    const fromOrTo = (t.recipient.plain() === address.plain()) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
     if (t.containsMosaics()) {
-        console.log('transaction with mosaics:', t);
-        let item = `
-        <div class=${classType}>
-            <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-            <p>${fromOrTo}</p>
-            <p>Message: ${getTransactionMessage(t)}</p>
-            <p>Fee: ${t.fee/ 1000000} XEM </p>
-        `
-        t.mosaics().forEach(mosaic => {
-            item += `
-                <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
-            `
+        console.log('mosaics:', t.mosaics());
+        const mosaicPromises = t.mosaics().map(m => {
+            return getMosaicValue(m.quantity, m.mosaicId).then((value) => {
+                return {
+                    mosaicId: m.mosaicId,
+                    quantity: value,
+                }
+            });
         });
-        item += `
-        </div>
-        `
-    } else {
-        return `
+        return Promise.all(mosaicPromises).then((mosaics) => {
+            let item = `
             <div class=${classType}>
                 <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                 <p>${fromOrTo}</p>
                 <p>Message: ${getTransactionMessage(t)}</p>
-                <p>Amount: ${(t.xem().quantity / 1000000) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
+                <p>Fee: ${t.fee/ 1000000} XEM </p>
+            `
+            mosaics.forEach(mosaic => {
+                console.log('mosaic ----->', mosaic);
+                item += `
+                    <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
+                `
+            });
+            item += `
             </div>
-        `;
+            `
+            return item;
+        });
+    } else {
+        // console.log("xem ->", t.xem());
+        return Promise.resolve(`
+            <div class=${classType}>
+                <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                <p>${fromOrTo}</p>
+                <p>Message: ${getTransactionMessage(t)}</p>
+                <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
+            </div>
+        `);
+    }
+}
+
+function generateUnconfirmedTransactionItem (tx) {
+    const t = getTransferTransaction(tx);
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    // console.log("transaction -> ", t);
+    // console.log("own address -> ", address);
+    if (!t) return;
+    let classType = "unconfirmed";
+    const fromOrTo = (t.recipient.plain() === address.plain()) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
+    if (t.containsMosaics()) {
+        const mosaicPromises = t.mosaics().map(m => {
+            return getMosaicValue(m.quantity, m.mosaicId).then((value) => {
+                return {
+                    mosaicId: m.mosaicId,
+                    quantity: m.quantity,
+                }
+            });
+        });
+        // console.log('mosaics:', t.mosaics());
+        return Promise.all(mosaicPromises).then((mosaics) => {
+            let item = `
+            <div class=${classType}>
+                <p>Unconfirmed Transaction</p>
+                <p>${fromOrTo}</p>
+                <p>Message: ${getTransactionMessage(t)}</p>
+                <p>Fee: ${t.fee/ 1000000} XEM </p>
+            `
+            mosaics.forEach(mosaic => {
+                console.log('mosaic ----->', mosaic);
+                item += `
+                    <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
+                `
+            });
+            item += `
+            </div>
+            `
+            return item;
+        });
+    } else {
+        // console.log("xem ->", t.xem());
+        return Promise.resolve(`
+            <div class=${classType}>
+                <p>Unconfirmed Transaction</p>
+                <p>${from}</p>
+                <p>${to}</p>
+                <p>Message: ${getTransactionMessage(t)}</p>
+                <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
+            </div>
+        `);
     }
 }
 
@@ -368,7 +445,7 @@ function generateTransactionItem (tx) {
 */
 function getBalanceAndTxs() {
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
-    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
+    const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
     const obs = accountHttp.getFromAddress(address);
@@ -383,24 +460,23 @@ function getBalanceAndTxs() {
     .then(unconfirmedTrans => {
         unconfirmedTransactions = unconfirmedTrans.length;
         unconfirmedTrans.forEach(tx => {
-            const t = getTransferTransaction(t);
+            const t = getTransferTransaction(tx);
             if (!t) return;
-            $('#unconfirmed-transactions-box').append(`
-                <div class="unconfirmed">
-                    <p>Unconfirmed Transaction</p>
-                    <p>From: ${t.signer.address.pretty()}</p>
-                    <p>To: ${t.recipient.pretty()}</p>
-                    <p>Message: ${getTransactionMessage(t)}/p>
-                    <p>Amount: ${t.xem().quantity / 1000000} XEM Fee: ${t.fee / 1000000} XEM<p>
-                </div>
-            `);
+            generateUnconfirmedTransactionItem(tx).then(t => {
+                $('#unconfirmed-transactions-box').append(t);
+            });
         });
         // get comfirmed
         getAllTransactions(address)
         .then(transactions => {
-            transactions[0].forEach(tx => {
-                $('#last-transactions-box').append(generateTransactionItem(tx));
+            const promises = transactions[0].map(tx => {
+                return generateTransactionItem(tx);
             });
+            Promise.all(promises).then(trans => {
+                trans.forEach(t => {
+                    $('#last-transactions-box').append(t);
+                });
+            })
         });
     });
 }
@@ -411,7 +487,7 @@ function getBalanceAndTxs() {
 */
 function getNewBalanceAndTxs() {
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
-    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
+    const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
     accountHttp.getFromAddress(address).toPromise()
@@ -425,25 +501,25 @@ function getNewBalanceAndTxs() {
         $('#unconfirmed-transactions-box').empty();
         const newUnconfirmedTransactions = unconfirmedTrans.length;
         unconfirmedTrans.forEach(tx => {
-            const t = getTransferTransaction(t);
+            const t = getTransferTransaction(tx);
             if (!t) return;
-            $('#unconfirmed-transactions-box').append(`
-                <div class="unconfirmed">
-                    <p>Unconfirmed Transaction</p>
-                    <p>From: ${t.signer.address.pretty()}</p>
-                    <p>To: ${t.recipient.pretty()}</p>
-                    <p>Message: ${getTransactionMessage(t)}/p>
-                    <p>Amount: ${t.xem().quantity / 1000000} XEM Fee: ${t.fee / 1000000} XEM<p>
-                </div>
-            `);
+            generateUnconfirmedTransactionItem(tx).then(t => {
+                $('#unconfirmed-transactions-box').append(t);
+            });
         });
         // get comfirmed
         getAllTransactions(address)
         .then(trans => {
             const transactions = trans[0];
+            let promises = [];
             for(let i = 0; i < unconfirmedTransactions - newUnconfirmedTransactions; ++i){
-                $('#last-transactions-box').append(generateTransactionItem(transactions[i]));
+                promises.append(generateTransactionItem(transactions[i]));
             }
+            Promise.all(promises).then(ts => {
+                ts.forEach(t => {
+                    $('#last-transactions-box').append(t);
+                });
+            });
             unconfirmedTransactions = newUnconfirmedTransactions;
         });
     });
@@ -528,7 +604,7 @@ function renderHome() {
             if (!isTrezor) {
                 wallet = readWalletFile(data.default_xem_wallet);
             }
-            const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
+            const network = (isTrezor) ? trezorNetwork : wallet.network;
             initLibrary(network);
             $('body').append(`
                 <!-- HOME PAGE -->
@@ -554,6 +630,7 @@ function renderHome() {
             $("#to-new-transaction-button").click(() => renderNewTransaction());
             $("#to-settings-button").click(() => renderSettings());
             const address = (isTrezor) ? trezorAccount.address : wallet.address;
+            console.log(address);
             $('#p-address').text(address.pretty());
             getBalanceAndTxs();
             clearIntervals();
@@ -700,7 +777,7 @@ function renderAccountInfoQR() {
         <!-- END QR ADDRESS PAGE -->`
     );
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
-    const network = (isTrezor) ? nem.NetworkTypes.MAIN_NET : wallet.network;
+    const network = (isTrezor) ? trezorNetwork : wallet.network;
     $('#h4-address').text(address.pretty());
     // Account info model for QR
     const accountInfoModelQR = {
