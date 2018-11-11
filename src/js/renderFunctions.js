@@ -22,15 +22,6 @@ let getTransactionMessage = function(tx) {
     else return "";
 }
 
-const getTransferTransaction = function (transaction) {
-    if (transaction.type === nem.TransactionTypes.MULTISIG) {
-        return transaction.otherTransaction;
-    } else if (transaction.type === nem.TransactionTypes.TRANSFER) {
-        return transaction;
-    }
-    else return null;
-}
-
 const getAllTransactions = function (receiver) {
     const accountHttp = new nem.AccountHttp();
     const pageable = accountHttp.allTransactionsPaginated(receiver, {pageSize: 100});
@@ -112,6 +103,7 @@ function createPRNG() {
     }
 
     const wlt = nem.SimpleWallet.create(walletName, new nem.Password(walletPassword));
+    console.log("wallet created");
     // Save it using the Chrome extension storage API.
 
     chrome.storage.local.clear(() => {
@@ -520,8 +512,12 @@ function getBalanceAndTxs() {
     const obs = accountHttp.getFromAddress(address);
     obs.toPromise()
     .then((accountInfoWithMd) => {
+        console.log("stuff", accountInfoWithMd);
         let balance = accountInfoWithMd.balance.balance / 1000000;
         $('#p-balance').text(balance.toString() + ' XEM'); 
+    }).catch(err => {
+        $('#p-balance').text('0 XEM');
+        return;
     });
 
     // get unconfirmed
@@ -538,6 +534,7 @@ function getBalanceAndTxs() {
         // get comfirmed
         getAllTransactions(address)
         .then(transactions => {
+            if (!transactions[0]) return;
             const promises = transactions[0].map(tx => {
                 return generateTransactionItem(tx);
             });
@@ -569,6 +566,9 @@ function getNewBalanceAndTxs() {
     .then((accountInfoWithMd) => {
         let balance = accountInfoWithMd.balance.balance / 1000000;
         $('#p-balance').text(balance.toString() + ' XEM'); 
+    }).catch(err => {
+        $('#p-balance').text('0 XEM');
+        return;
     });
     // get unconfirmed
     accountHttp.unconfirmedTransactions(address).toPromise()
@@ -585,6 +585,7 @@ function getNewBalanceAndTxs() {
         // get comfirmed
         getAllTransactions(address)
         .then(trans => {
+            if (!trans[0]) return;
             const transactions = trans[0];
             let promises = [];
             for(let i = 0; i < unconfirmedTransactions - newUnconfirmedTransactions; ++i){
@@ -710,7 +711,7 @@ function renderHome() {
             $("#to-settings-button").click(() => renderSettings());
             const address = (isTrezor) ? trezorAccount.address : wallet.address;
             $('#p-address').text(address.pretty());
-            getBalanceAndTxs();
+            getBalanceAndTxs()
             clearIntervals();
             setInterval(() => getNewBalanceAndTxs(), 5000);
         }
