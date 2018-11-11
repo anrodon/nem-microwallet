@@ -37,7 +37,7 @@ const getAllTransactions = function (receiver) {
     const all = [];
     return new Promise((resolve, reject) => {
         pageable.subscribe(x => {
-            all.push(x.filter((t) => (t.type === nem.TransactionTypes.MULTISIG || t.type === nem.TransactionTypes.TRANSFER)));
+            all.push(x.filter((t) => (t.type === nem.TransactionTypes.TRANSFER)));
             pageable.nextPage();
         }, err => {
             reject(err);
@@ -246,14 +246,40 @@ let getMosaicValue = function(value, mosaicId) {
     });
 }
 
+// get real value of a mosaic with divisivility
+let getMosaicValueAndDefinition = function(value, mosaicId) {
+    const mosaicHttp = new nem.MosaicHttp();
+    return mosaicHttp.getMosaicDefinition(mosaicId).toPromise()
+    .then(definition => {
+        const div = definition.properties.divisibility;
+        return {
+            value: (value / (10 ** div)),
+            definition,
+        }
+    });
+}
+
+let ownedMosaics;
 let getOwnedMosaics = function() {
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
     const accountHttp = new nem.AccountHttp();
     return accountHttp.getMosaicOwnedByAddress(address).toPromise()
     .then(mosaics => {
-        return Promise.all(mosaics.map(mosaic => {
-            return getMosaicValue(mosaic.quantity, mosaic.mosaicId);
-        }));
+        const allPromises = mosaics.map(mosaic => {
+            if (mosaic.mosaicId.namespaceId === 'nem' && mosaic.mosaicId.name === 'xem') return Promise.resolve({
+                mosaicId: mosaic.mosaicId,
+                quantity: mosaic.quantity / 1000000,
+            });
+            const valueP =getMosaicValueAndDefinition(mosaic.quantity, mosaic.mosaicId);
+            return valueP.then(value => {
+                return {
+                    mosaicId: mosaic.mosaicId,
+                    quantity: value.value,
+                    definition: value.definition,
+                };
+            });
+        });
+        return Promise.all(allPromises);
     });
 }
 
@@ -265,6 +291,9 @@ function sendTransaction() {
     const recipient = $('#recipient').val();
     const amount = ($('#amount').val());
     const message = $('#message').val();
+    const mosaicI = $('#mosaic-selected').val();
+    const mosaic = ownedMosaics[mosaicI];
+    console.log("selected", mosaic);
     let password;
     if (!isTrezor) {
         password = $('#password').val();
@@ -286,12 +315,22 @@ function sendTransaction() {
         $('#wrong-amount-error-message').show();
     }
     else {
-        const transferTransaction = nem.TransferTransaction.create(
-            nem.TimeWindow.createWithDeadline(),
-            new nem.Address(recipient),
-            new nem.XEM(amount),
-            nem.PlainMessage.create(message)
-        );
+        let transferTransaction;
+        if (mosaic.mosaicId.namespaceId === 'nem' && mosaic.mosaicId.name === 'xem') {
+            transferTransaction = nem.TransferTransaction.create(
+                nem.TimeWindow.createWithDeadline(),
+                new nem.Address(recipient),
+                new nem.XEM(amount),
+                nem.PlainMessage.create(message)
+            );
+        } else {
+            transferTransaction = nem.TransferTransaction.createWithMosaics(
+                nem.TimeWindow.createWithDeadline(),
+                new nem.Address(recipient),
+                [nem.MosaicTransferable.createWithMosaicDefinition(mosaic.definition, amount)],
+                nem.PlainMessage.create(message)
+            );
+        }
 
         if (isTrezor) {
             try {
@@ -333,6 +372,7 @@ function sendTransaction() {
                 };
             });
         }
+
     }
 }
 
@@ -441,8 +481,7 @@ function generateUnconfirmedTransactionItem (tx) {
         return Promise.resolve(`
             <div class=${classType}>
                 <p>Unconfirmed Transaction</p>
-                <p>${from}</p>
-                <p>${to}</p>
+                <p>${fromOrTo}</p>
                 <p>Message: ${getTransactionMessage(t)}</p>
                 <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
             </div>
@@ -523,7 +562,7 @@ function getNewBalanceAndTxs() {
             const transactions = trans[0];
             let promises = [];
             for(let i = 0; i < unconfirmedTransactions - newUnconfirmedTransactions; ++i){
-                promises.append(generateTransactionItem(transactions[i]));
+                promises.push(generateTransactionItem(transactions[i]));
             }
             Promise.all(promises).then(ts => {
                 ts.forEach(t => {
@@ -738,40 +777,49 @@ function renderLogin() {
 */
 function renderNewTransaction() {
     $('body').empty();
-    // TODO: no password field when trezor
-    $('body').append(`
-        <!-- NEW TRANSACTION PAGE -->
-        <header>
+    getOwnedMosaics().then(mosaics => {
+        console.log("gotten", mosaics);
+        ownedMosaics = mosaics;
+        let elements = [];
+        mosaics.forEach((mosaic, i) => {
+            elements.push(`<option value=${i}>${mosaic.mosaicId.namespaceId}:${mosaic.mosaicId.name}</option>`);
+        });
+        let page = `
+        <!--NEW TRANSACTION PAGE -->
+            <header>
             <div class="navbar navbar-default navbar-fixed-top row">
-                <a id="to-home"><h1><</h1></a>
-                <h1 class="text-nav">${newTransactionText}</h1>
+            <a id="to-home"><h1><</h1></a>
+            <h1 class="text-nav">${newTransactionText}</h1>
             </div>
-        </header>
+            </header>
 
-        <div id="new-transaction-page" class="form-style-4">
-            <input type="text" id="recipient" placeholder="${recipientText}" class="form-control"></input>
-            <select id="mosaic-selected" class="dropdown-mosaic">
-            <!-- Carregar llistat de mosaics dinamicament i asigar com a valor el seu propi nom -->
-                <option value="${testnetId}">Mosaic #1</option>
-                <option value="${mainnetId}">Mosaic #2</option>
-                <option value="${mijinId}">Mosaic #3</option>
-            </select>
-            <input type="number" id="amount" placeholder="${amountText}" class="form-control"></input>
-            <input type="text" id="message" placeholder="${messageText}"class="form-control"></input>
-            <input type="password" id="password" placeholder="${passwordText}"class="form-control"></input>
-            <button id="send-transaction-button" class="btn btn-1">${sendTxText}</button>
-            <p id="success-message">${txSuccessText}</p>
-            <p class="error-message" id="incomplete-error-message">${allFieldsRequiredText}</p>
-            <p class="error-message" id="wrong-address-error-message">${wrongAddressText}</p>
-            <p class="error-message" id="an-error-message">${anErrorOcurredText}</p>
-            <p class="error-message" id="wrong-amount-error-message">${wrongAmountText}</p>
-        </div>
-        <!-- END NEW TRANSACTION PAGE -->`
-    );
-    $("#send-transaction-button").click(() => {
-        sendTransaction();
+            <div id="new-transaction-page" class="form-style-4">
+                <input type="text" id="recipient" placeholder="${recipientText}" class="form-control"></input>
+                <select id="mosaic-selected" class="dropdown-mosaic">
+                <!-- Carregar llistat de mosaics dinamicament i asigar com a valor el seu propi nom -->
+        `
+        elements.forEach(e => page += e);
+        page += `
+                </select>
+                <input type="number" id="amount" placeholder="${amountText}" class="form-control"></input>
+                <input type="text" id="message" placeholder="${messageText}"class="form-control"></input>
+                <input type="password" id="password" placeholder="${passwordText}"class="form-control"></input>
+                <button id="send-transaction-button" class="btn btn-1">${sendTxText}</button>
+                <p id="success-message">${txSuccessText}</p>
+                <p class="error-message" id="incomplete-error-message">${allFieldsRequiredText}</p>
+                <p class="error-message" id="wrong-address-error-message">${wrongAddressText}</p>
+                <p class="error-message" id="an-error-message">${anErrorOcurredText}</p>
+                <p class="error-message" id="wrong-amount-error-message">${wrongAmountText}</p>
+            </div>
+            <!-- END NEW TRANSACTION PAGE -->
+        `;
+        $('body').append(page);
+        $("#send-transaction-button").click(() => {
+            sendTransaction();
+        });
+        $("#to-home").click(() => renderHome());
     });
-    $("#to-home").click(() => renderHome());
+    // TODO: no password field when trezor
 }
 
 /**
@@ -819,7 +867,8 @@ function renderAccountInfoQR() {
 
 function renderMosaicList() {
     $('body').empty();
-    $('body').append(`
+    getOwnedMosaics().then(mosaics => {
+        let body = `
         <!-- QR ADDRESS PAGE -->
         <header>
             <div class="navbar navbar-default navbar-fixed-top">
@@ -837,26 +886,24 @@ function renderMosaicList() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td scope="row">Mosaic #1</td>
-                  <td>455.2</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #2</td>
-                  <td>300</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #3</td>
-                  <td>200</td>
-                </tr>
-              </tbody>
-            </table>
-        </div>
-        <!-- END QR ADDRESS PAGE -->`
-    );
-    $("#to-home").click(() => renderHome());
+        `
+        mosaics.forEach(mosaic => {
+            body += `
+            <tr>
+              <td scope="row">${mosaic.mosaicId.namespaceId}:${mosaic.mosaicId.name}</td>
+              <td>${mosaic.quantity}</td>
+            </tr>
+            `
+        });
+        body += `
+                  </tbody>
+                </table>
+            </div>
+            <!-- END QR ADDRESS PAGE -->
+        `
+        $('body').append(body);
+        $("#to-home").click(() => renderHome());
+    });
 }
 
 /**
