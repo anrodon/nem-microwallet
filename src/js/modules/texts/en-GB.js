@@ -1,7 +1,8 @@
 const appTitleText = "NEM MicroWallet";
-const appClaimText = "Chrome NEM Wallet Extension";
+const appClaimText = "Chrome Extension";
 const newTransactionText = "New transaction";
 const settingsText = "Settings";
+const exploreText = "Explorer";
 const importWalletText = "Import wallet";
 const createWalletText = "Create wallet";
 const createPRNGWalletText = "Create simple wallet";
@@ -33,3 +34,4 @@ const wrongAmountText = "Amount is invalid";
 const anErrorOcurredText = "An error ocurred sending the transaction";
 const showAccountInfoQRText = "Show QR Address";
 const errorImportWalletText= "Incorrect wallet file";
+const trezorLoginText = "Log in with Trezor";
