@@ -747,9 +747,9 @@ function renderLogin() {
                 <div class="col-sm-12">
                     <button id="create-wallet" class="btn btn-1">${createWalletText}</button>
                 </div>
-                <div class="col-sm-12">
+                <!--<div class="col-sm-12">
                     <button id="trezor-login" class="btn btn-1">${trezorLoginText}</button>
-                </div>
+                </div>-->
             </div>
             <div id="warning-msg" class="row error hidden">
                 <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> ${errorImportWalletText}
