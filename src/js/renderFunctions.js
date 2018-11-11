@@ -152,18 +152,17 @@ function trezorLogin() {
         isTrezor = true;
         trezor.TrezorAccount.getAccount(0).toPromise()
         .then((account) => {
-          console.log(account);
           trezorAccount = account;
           renderHome();
         }).catch((e) => {
             // TODO: warning
             console.log(e);
-            console.log("error loging in with trezor");
+            console.log("error logging in with trezor");
         })
     } catch (e) {
         // TODO: warning
         console.log(e);
-        console.log("error loging in with trezor");
+        console.log("error logging in with trezor");
     }
 }
 
@@ -244,6 +243,17 @@ let getMosaicValue = function(value, mosaicId) {
     .then(definition => {
         const div = definition.properties.divisibility;
         return (value / (10 ** div));
+    });
+}
+
+getOwnedMosaics = function() {
+    const address = (isTrezor) ? trezorAccount.address : wallet.address;
+    const accountHttp = new nem.AccountHttp();
+    return accountHttp.getMosaicOwnedByAddress(address).toPromise()
+    .then(mosaics => {
+        return Promise.all(mosaics.map(mosaic => {
+            return getMosaicValue(mosaic.quantity, mosaic.mosaicId);
+        }));
     });
 }
 
@@ -348,7 +358,7 @@ function generateTransactionItem (tx) {
     let classType = (t.recipient.plain() === address.plain()) ? "received" : "sent";
     const fromOrTo = (t.recipient.plain() === address.plain()) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
     if (t.containsMosaics()) {
-        console.log('mosaics:', t.mosaics());
+        // console.log('mosaics:', t.mosaics());
         const mosaicPromises = t.mosaics().map(m => {
             return getMosaicValue(m.quantity, m.mosaicId).then((value) => {
                 return {
@@ -366,7 +376,7 @@ function generateTransactionItem (tx) {
                 <p>Fee: ${t.fee/ 1000000} XEM </p>
             `
             mosaics.forEach(mosaic => {
-                console.log('mosaic ----->', mosaic);
+                // console.log('mosaic ----->', mosaic);
                 item += `
                     <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
                 `
@@ -416,7 +426,7 @@ function generateUnconfirmedTransactionItem (tx) {
                 <p>Fee: ${t.fee/ 1000000} XEM </p>
             `
             mosaics.forEach(mosaic => {
-                console.log('mosaic ----->', mosaic);
+                // console.log('mosaic ----->', mosaic);
                 item += `
                     <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
                 `
@@ -630,7 +640,6 @@ function renderHome() {
             $("#to-new-transaction-button").click(() => renderNewTransaction());
             $("#to-settings-button").click(() => renderSettings());
             const address = (isTrezor) ? trezorAccount.address : wallet.address;
-            console.log(address);
             $('#p-address').text(address.pretty());
             getBalanceAndTxs();
             clearIntervals();
