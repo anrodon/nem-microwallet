@@ -501,6 +501,13 @@ function generateUnconfirmedTransactionItem (tx) {
     }
 }
 
+function getBalance(address) {
+    return getOwnedMosaics().then(mosaics => {
+        const xem = mosaics.find(m => m.mosaicId.name === "xem" && m.mosaicId.namespaceId === "nem");
+        return xem.quantity / 1000000;
+    });
+}
+
 /**
 * getBalanceAndTxs() Gets and prints the balance and transactions of an address
 */
@@ -509,11 +516,10 @@ function getBalanceAndTxs() {
     const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
-    const obs = accountHttp.getFromAddress(address);
-    obs.toPromise()
-    .then((accountInfoWithMd) => {
-        console.log("stuff", accountInfoWithMd);
-        let balance = accountInfoWithMd.balance.balance / 1000000;
+
+    getBalance(address)
+    .then((balance) => {
+        console.log("balance", balance);
         $('#p-balance').text(balance.toString() + ' XEM'); 
     }).catch(err => {
         $('#p-balance').text('0 XEM');
@@ -562,9 +568,9 @@ function getNewBalanceAndTxs() {
     const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
-    accountHttp.getFromAddress(address).toPromise()
-    .then((accountInfoWithMd) => {
-        let balance = accountInfoWithMd.balance.balance / 1000000;
+    getBalance(address)
+    .then((balance) => {
+        console.log("balance", balance);
         $('#p-balance').text(balance.toString() + ' XEM'); 
     }).catch(err => {
         $('#p-balance').text('0 XEM');
