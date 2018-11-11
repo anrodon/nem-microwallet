@@ -37,7 +37,7 @@ const getAllTransactions = function (receiver) {
     const all = [];
     return new Promise((resolve, reject) => {
         pageable.subscribe(x => {
-            all.push(x.filter((t) => (t.type === nem.TransactionTypes.MULTISIG || t.type === nem.TransactionTypes.TRANSFER)));
+            all.push(x.filter((t) => (t.type === nem.TransactionTypes.TRANSFER)));
             pageable.nextPage();
         }, err => {
             reject(err);
@@ -867,7 +867,8 @@ function renderAccountInfoQR() {
 
 function renderMosaicList() {
     $('body').empty();
-    $('body').append(`
+    getOwnedMosaics().then(mosaics => {
+        let body = `
         <!-- QR ADDRESS PAGE -->
         <header>
             <div class="navbar navbar-default navbar-fixed-top">
@@ -885,26 +886,24 @@ function renderMosaicList() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td scope="row">Mosaic #1</td>
-                  <td>455.2</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #2</td>
-                  <td>300</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #3</td>
-                  <td>200</td>
-                </tr>
-              </tbody>
-            </table>
-        </div>
-        <!-- END QR ADDRESS PAGE -->`
-    );
-    $("#to-home").click(() => renderHome());
+        `
+        mosaics.forEach(mosaic => {
+            body += `
+            <tr>
+              <td scope="row">${mosaic.mosaicId.namespaceId}:${mosaic.mosaicId.name}</td>
+              <td>${mosaic.quantity}</td>
+            </tr>
+            `
+        });
+        body += `
+                  </tbody>
+                </table>
+            </div>
+            <!-- END QR ADDRESS PAGE -->
+        `
+        $('body').append(body);
+        $("#to-home").click(() => renderHome());
+    });
 }
 
 /**
