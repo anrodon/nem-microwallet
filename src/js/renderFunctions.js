@@ -246,7 +246,7 @@ let getMosaicValue = function(value, mosaicId) {
     });
 }
 
-getOwnedMosaics = function() {
+let getOwnedMosaics = function() {
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
     const accountHttp = new nem.AccountHttp();
     return accountHttp.getMosaicOwnedByAddress(address).toPromise()
@@ -809,6 +809,50 @@ function renderAccountInfoQR() {
     $("#to-settings").click(() => renderSettings());
 }
 
+/* NEW FUNCTIONALLITY */
+
+function renderMosaicList() {
+    $('body').empty();
+    $('body').append(`
+        <!-- QR ADDRESS PAGE -->
+        <header>
+            <div class="navbar navbar-default navbar-fixed-top">
+                <a id="to-home"><h1><</h1></a>
+                <h1 class="text-nav">${exploreText}</h1>
+             </div>
+        </header>
+        <div id="divExplorer">
+            <h4 style="color:#848484;">Your Mosaics</h4>
+            <table class="table" id="tableMosaics">
+              <thead class="table-header">
+                <tr>
+                  <th scope="col">Name</th>
+                  <th scope="col">Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td scope="row">Mosaic #1</td>
+                  <td>455.2</td>
+
+                </tr>
+                <tr>
+                  <td scope="row">Mosaic #2</td>
+                  <td>300</td>
+
+                </tr>
+                <tr>
+                  <td scope="row">Mosaic #3</td>
+                  <td>200</td>
+                </tr>
+              </tbody>
+            </table>
+        </div>
+        <!-- END QR ADDRESS PAGE -->`
+    );
+    $("#to-home").click(() => renderHome());
+}
+
 /**
 * renderSettings() Renders the settings page
 *
@@ -826,12 +870,18 @@ function renderSettings() {
         </header>
         <div id="settings-page"> 
             <div class="row vertically-centered" style="margin-top: 50px;">
+
+                <!-- NEW PAGE PART! -->
                 <div class="col-sm-12">
-                    <button id="export-wallet-button" class="btn btn-1">${exportWalletText}</button>
+                    <button id="mosaic-button" class="btn btn-1">${exploreText}</button>
                 </div>
                 <div class="col-sm-12">
                     <button id="show-account-info-qr-button" class="btn btn-1">${showAccountInfoQRText}</button>
                 </div>
+                <div class="col-sm-12">
+                    <button id="export-wallet-button" class="btn btn-1">${exportWalletText}</button>
+                </div>
+                
                 <div class="col-sm-12">
                     <button id="logout-button" class="btn btn-1">${logoutText}</button>
                 </div>
@@ -840,9 +890,9 @@ function renderSettings() {
 
         <!-- END SETTINGS PAGE -->`
     );
-    // TODO: block export wallet if using Trezor
     $("#export-wallet-button").click(() => exportWallet());
     $("#show-account-info-qr-button").click(() => renderAccountInfoQR());
+    $("#mosaic-button").click(() => renderMosaicList());
     $("#logout-button").click(() => logout());
     $("#to-home").click(() => renderHome());
 }

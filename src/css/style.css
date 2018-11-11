@@ -131,10 +131,6 @@ p {
     margin-top: 100px;
 }
 
-#export-wallet-button {
-    margin-top: 80px;
-}
-
 .form-style-4 input[type=text],
 .form-style-4 input[type=number],
 .form-style-4 input[type=password]
@@ -233,4 +229,19 @@ h1{
     text-decoration: none;
     margin-right: -45px;
     margin-left: 25px;
+}
+.table-header{
+    color: white;
+    background-color: #00C4B3;
+}
+#tableMosaics{
+    border: 1px solid #848484;
+    font-size: 14px;
+}
+#divExplorer{
+    text-align: left;
+    margin-top: 85px;
+}
+#mosaic-button{
+    margin-top: 80px;
 }
