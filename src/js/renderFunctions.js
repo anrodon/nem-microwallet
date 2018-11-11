@@ -437,7 +437,7 @@ function generateTransactionItem (tx) {
                     <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
                     <p>${fromOrTo}</p>
                     <p>Message: ${getTransactionMessage(t)}</p>
-                    <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
+                    <p>Amount: ${(t.xem().amount) + " XEM"} Fee: ${t.fee / 1000000} XEM </p>
                 </div>
             `).catch(err => {throw err});
         }
@@ -504,7 +504,7 @@ function generateUnconfirmedTransactionItem (tx) {
 function getBalance(address) {
     return getOwnedMosaics().then(mosaics => {
         const xem = mosaics.find(m => m.mosaicId.name === "xem" && m.mosaicId.namespaceId === "nem");
-        return xem.quantity / 1000000;
+        return xem.quantity;
     });
 }
 
