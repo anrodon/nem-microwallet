@@ -1,6 +1,6 @@
 {
   "name": "nem-microwallet",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "NEM Blockchain Chrome Extension wallet",
   "main": "src/js/popup.js",
   "scripts": {
@@ -28,9 +28,13 @@
     "grunt-contrib-copy": "^1.0.0",
     "load-grunt-tasks": "^3.5.2",
     "serve-static": "^1.12.3",
-    "time-grunt": "^1.4.0"
+    "time-grunt": "^1.4.0",
+    "webpack": "^4.22.0",
+    "webpack-cli": "^3.1.2"
   },
   "dependencies": {
-    "kjua": "^0.1.2"
+    "kjua": "^0.1.2",
+    "nem-library": "^1.0.9",
+    "nem-trezor": "^1.0.16"
   }
 }

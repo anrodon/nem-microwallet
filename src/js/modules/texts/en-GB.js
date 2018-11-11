@@ -33,3 +33,4 @@ const wrongAmountText = "Amount is invalid";
 const anErrorOcurredText = "An error ocurred sending the transaction";
 const showAccountInfoQRText = "Show QR Address";
 const errorImportWalletText= "Incorrect wallet file";
+const trezorLoginText = "Log in with Trezor";
