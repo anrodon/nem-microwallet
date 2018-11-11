@@ -3,6 +3,7 @@ const appClaimText = "Chrome Extension";
 const newTransactionText = "New transaction";
 const settingsText = "Settings";
 const exploreText = "Explorer";
+const accountText = "Account QR";
 const importWalletText = "Import wallet";
 const createWalletText = "Create wallet";
 const createPRNGWalletText = "Create simple wallet";

@@ -830,13 +830,19 @@ function renderAccountInfoQR() {
     $('body').empty();
     $('body').append(`
         <!-- QR ADDRESS PAGE -->
+        <header>
+            <div class="navbar navbar-default navbar-fixed-top row">
+                <a id="to-settings"><h1><</h1></a>
+                <h1 class="text-nav">${accountText}</h1>
+            </div>
+        </header>
         <div id="qr-address-page">
-            <h4 id="h4-address" style="margin-top: 25px;"></h4>
-            <div class="row vertically-centered" style="margin-top: 50px;">
+            <h4 id="h4-address" style="margin-top: 80px;"></h4>
+            <div class="row">
                 <center><div id="accountInfoQR"></div></center>
             </div>
         </div>
-        <a id="to-settings"><i class="fa fa-arrow-left" aria-hidden="true" style="margin-top: 50px;"></i><a>
+        
         <!-- END QR ADDRESS PAGE -->`
     );
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
