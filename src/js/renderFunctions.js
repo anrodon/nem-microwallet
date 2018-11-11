@@ -750,6 +750,12 @@ function renderNewTransaction() {
 
         <div id="new-transaction-page" class="form-style-4">
             <input type="text" id="recipient" placeholder="${recipientText}" class="form-control"></input>
+            <select id="mosaic-selected" class="dropdown-mosaic">
+            <!-- Carregar llistat de mosaics dinamicament i asigar com a valor el seu propi nom -->
+                <option value="${testnetId}">Mosaic #1</option>
+                <option value="${mainnetId}">Mosaic #2</option>
+                <option value="${mijinId}">Mosaic #3</option>
+            </select>
             <input type="number" id="amount" placeholder="${amountText}" class="form-control"></input>
             <input type="text" id="message" placeholder="${messageText}"class="form-control"></input>
             <input type="password" id="password" placeholder="${passwordText}"class="form-control"></input>
