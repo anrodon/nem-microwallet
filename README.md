@@ -56,7 +56,7 @@ npm install
 5. Build your release with:
 
 ```
-grunt
+make
 ```
 
 6. Enjoy your release at the `dist` folder.

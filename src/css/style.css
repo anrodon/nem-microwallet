@@ -250,3 +250,14 @@ h1{
     height: 40px;
     background-color: #fff;
 }
+#to-settings{
+    float: left;
+    color: white;
+    text-decoration: none;
+    margin-right: -45px;
+    margin-left: 25px;
+}
+#accountInfoQR{
+    margin: 25px;
+    border: 1px solid #848484;
+}

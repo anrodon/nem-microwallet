@@ -22,22 +22,13 @@ let getTransactionMessage = function(tx) {
     else return "";
 }
 
-const getTransferTransaction = function (transaction) {
-    if (transaction.type === nem.TransactionTypes.MULTISIG) {
-        return transaction.otherTransaction;
-    } else if (transaction.type === nem.TransactionTypes.TRANSFER) {
-        return transaction;
-    }
-    else return null;
-}
-
 const getAllTransactions = function (receiver) {
     const accountHttp = new nem.AccountHttp();
     const pageable = accountHttp.allTransactionsPaginated(receiver, {pageSize: 100});
     const all = [];
     return new Promise((resolve, reject) => {
         pageable.subscribe(x => {
-            all.push(x.filter((t) => (t.type === nem.TransactionTypes.MULTISIG || t.type === nem.TransactionTypes.TRANSFER)));
+            all.push(x.filter((t) => (t.type === nem.TransactionTypes.TRANSFER)));
             pageable.nextPage();
         }, err => {
             reject(err);
@@ -112,6 +103,7 @@ function createPRNG() {
     }
 
     const wlt = nem.SimpleWallet.create(walletName, new nem.Password(walletPassword));
+    console.log("wallet created");
     // Save it using the Chrome extension storage API.
 
     chrome.storage.local.clear(() => {
@@ -175,9 +167,12 @@ function finishImport(fr) {
     // Word array to wallet string
     try {
         chrome.storage.local.clear(() => {
-            chrome.storage.local.set({'default_xem_wallet': fr.result}, function() {console.log("Wallet imported successfully.");});
-            clearIntervals();
-            renderHome();
+            console.log("result", fr.result);
+            chrome.storage.local.set({'default_xem_wallet': fr.result}, function() {
+                console.log("Wallet imported successfully.");
+                clearIntervals();
+                renderHome();
+            });
         });
     } catch (e) {
         $("#warning-msg").removeClass("hidden");
@@ -238,22 +233,51 @@ let isAmountValid = function(n) {
 
 // get real value of a mosaic
 let getMosaicValue = function(value, mosaicId) {
+    if (mosaicId.namespaceId === 'nem' && mosaicId.name === 'xem') {
+        return value / 1000000;
+    }
     const mosaicHttp = new nem.MosaicHttp();
     return mosaicHttp.getMosaicDefinition(mosaicId).toPromise()
     .then(definition => {
         const div = definition.properties.divisibility;
         return (value / (10 ** div));
+    }).catch(err => {throw err});
+}
+
+// get real value of a mosaic with divisivility
+let getMosaicValueAndDefinition = function(value, mosaicId) {
+    const mosaicHttp = new nem.MosaicHttp();
+    return mosaicHttp.getMosaicDefinition(mosaicId).toPromise()
+    .then(definition => {
+        const div = definition.properties.divisibility;
+        return {
+            value: (value / (10 ** div)),
+            definition,
+        }
     });
 }
 
+let ownedMosaics;
 let getOwnedMosaics = function() {
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
     const accountHttp = new nem.AccountHttp();
     return accountHttp.getMosaicOwnedByAddress(address).toPromise()
     .then(mosaics => {
-        return Promise.all(mosaics.map(mosaic => {
-            return getMosaicValue(mosaic.quantity, mosaic.mosaicId);
-        }));
+        const allPromises = mosaics.map(mosaic => {
+            if (mosaic.mosaicId.namespaceId === 'nem' && mosaic.mosaicId.name === 'xem') return Promise.resolve({
+                mosaicId: mosaic.mosaicId,
+                quantity: mosaic.quantity / 1000000,
+            });
+            const valueP =getMosaicValueAndDefinition(mosaic.quantity, mosaic.mosaicId);
+            return valueP.then(value => {
+                return {
+                    mosaicId: mosaic.mosaicId,
+                    quantity: value.value,
+                    definition: value.definition,
+                };
+            });
+        });
+        return Promise.all(allPromises);
     });
 }
 
@@ -265,6 +289,9 @@ function sendTransaction() {
     const recipient = $('#recipient').val();
     const amount = ($('#amount').val());
     const message = $('#message').val();
+    const mosaicI = $('#mosaic-selected').val();
+    const mosaic = ownedMosaics[mosaicI];
+    console.log("selected", mosaic);
     let password;
     if (!isTrezor) {
         password = $('#password').val();
@@ -286,12 +313,22 @@ function sendTransaction() {
         $('#wrong-amount-error-message').show();
     }
     else {
-        const transferTransaction = nem.TransferTransaction.create(
-            nem.TimeWindow.createWithDeadline(),
-            new nem.Address(recipient),
-            new nem.XEM(amount),
-            nem.PlainMessage.create(message)
-        );
+        let transferTransaction;
+        if (mosaic.mosaicId.namespaceId === 'nem' && mosaic.mosaicId.name === 'xem') {
+            transferTransaction = nem.TransferTransaction.create(
+                nem.TimeWindow.createWithDeadline(),
+                new nem.Address(recipient),
+                new nem.XEM(amount),
+                nem.PlainMessage.create(message)
+            );
+        } else {
+            transferTransaction = nem.TransferTransaction.createWithMosaics(
+                nem.TimeWindow.createWithDeadline(),
+                new nem.Address(recipient),
+                [nem.MosaicTransferable.createWithMosaicDefinition(mosaic.definition, amount)],
+                nem.PlainMessage.create(message)
+            );
+        }
 
         if (isTrezor) {
             try {
@@ -333,6 +370,7 @@ function sendTransaction() {
                 };
             });
         }
+
     }
 }
 
@@ -348,59 +386,68 @@ chrome.storage.local.get('default_xem_wallet', function(data) {
 });
 
 function generateTransactionItem (tx) {
-    const t = getTransferTransaction(tx);
-    const address = (isTrezor) ? trezorAccount.address : wallet.address;
-    const network = (isTrezor) ? trezorNetwork : wallet.network;
-    // console.log("transaction -> ", t);
-    // console.log("own address -> ", address);
-    if (!t) return;
-    const url = (network == nem.NetworkTypes.TEST_NET) ? "http://bob.nem.ninja:8765/#/transfer/" : "http://chain.nem.ninja/#/transfer/";
-    let classType = (t.recipient.plain() === address.plain()) ? "received" : "sent";
-    const fromOrTo = (t.recipient.plain() === address.plain()) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
-    if (t.containsMosaics()) {
-        // console.log('mosaics:', t.mosaics());
-        const mosaicPromises = t.mosaics().map(m => {
-            return getMosaicValue(m.quantity, m.mosaicId).then((value) => {
-                return {
-                    mosaicId: m.mosaicId,
-                    quantity: value,
-                }
+    try {
+        const t = tx;
+        const address = (isTrezor) ? trezorAccount.address : wallet.address;
+        const network = (isTrezor) ? trezorNetwork : wallet.network;
+        // console.log("transaction -> ", t);
+        // console.log("own address -> ", address);
+
+        const url = (network == nem.NetworkTypes.TEST_NET) ? "http://bob.nem.ninja:8765/#/transfer/" : "http://chain.nem.ninja/#/transfer/";
+        let classType = (t.recipient.plain() === address.plain()) ? "received" : "sent";
+        const fromOrTo = (t.recipient.plain() === address.plain()) ? "From: " + t.signer.address.pretty() : "To: " + t.recipient.pretty();
+        if (t.containsMosaics()) {
+            // console.log('mosaics:', t.mosaics());
+            const mosaicPromises = t.mosaics().map(m => {
+                return getMosaicValue(m.quantity, m.mosaicId).then((value) => {
+                    const r = {
+                        mosaicId: m.mosaicId,
+                        quantity: value,
+                    };
+                    return r;
+                }).catch(err => {
+                    console.log("mosaic with error", m);
+                });
             });
-        });
-        return Promise.all(mosaicPromises).then((mosaics) => {
-            let item = `
-            <div class=${classType}>
-                <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                <p>${fromOrTo}</p>
-                <p>Message: ${getTransactionMessage(t)}</p>
-                <p>Fee: ${t.fee/ 1000000} XEM </p>
-            `
-            mosaics.forEach(mosaic => {
-                // console.log('mosaic ----->', mosaic);
-                item += `
-                    <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
+            return Promise.all(mosaicPromises).then((mosaics) => {
+                let item = `
+                <div class=${classType}>
+                    <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                    <p>${fromOrTo}</p>
+                    <p>Message: ${getTransactionMessage(t)}</p>
+                    <p>Fee: ${t.fee/ 1000000} XEM </p>
                 `
+                mosaics.forEach(mosaic => {
+                    if (!mosaic) return;
+                    item += `
+                        <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
+                    `
+                });
+                item += `
+                </div>
+                `
+                return item;
+            }).catch(err => {
+                console.log("err", err);
             });
-            item += `
-            </div>
-            `
-            return item;
-        });
-    } else {
-        // console.log("xem ->", t.xem());
-        return Promise.resolve(`
-            <div class=${classType}>
-                <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
-                <p>${fromOrTo}</p>
-                <p>Message: ${getTransactionMessage(t)}</p>
-                <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
-            </div>
-        `);
+        } else {
+            // console.log("xem ->", t.xem());
+            return Promise.resolve(`
+                <div class=${classType}>
+                    <a class="tx-link" href="${url + t.getTransactionInfo().hash.data}" onclick="chrome.tabs.create({url:this.href})" target="_blank">Transaction link</a>
+                    <p>${fromOrTo}</p>
+                    <p>Message: ${getTransactionMessage(t)}</p>
+                    <p>Amount: ${(t.xem().amount) + " XEM"} Fee: ${t.fee / 1000000} XEM </p>
+                </div>
+            `).catch(err => {throw err});
+        }
+    } catch (e) {
+        console.log("error", e);
     }
 }
 
 function generateUnconfirmedTransactionItem (tx) {
-    const t = getTransferTransaction(tx);
+    const t = tx;
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
     // console.log("transaction -> ", t);
     // console.log("own address -> ", address);
@@ -414,6 +461,8 @@ function generateUnconfirmedTransactionItem (tx) {
                     mosaicId: m.mosaicId,
                     quantity: m.quantity,
                 }
+            }).catch(err => {
+                console.log("mosaic with error", m);
             });
         });
         // console.log('mosaics:', t.mosaics());
@@ -426,6 +475,7 @@ function generateUnconfirmedTransactionItem (tx) {
                 <p>Fee: ${t.fee/ 1000000} XEM </p>
             `
             mosaics.forEach(mosaic => {
+                if (!mosaic) return;
                 // console.log('mosaic ----->', mosaic);
                 item += `
                     <p>Mosaic: ${mosaic.quantity} ${(mosaic.mosaicId.namespaceId + ':' + mosaic.mosaicId.name).toUpperCase()}</p>
@@ -435,19 +485,27 @@ function generateUnconfirmedTransactionItem (tx) {
             </div>
             `
             return item;
+        }).catch(err => {
+            throw err;
         });
     } else {
         // console.log("xem ->", t.xem());
         return Promise.resolve(`
             <div class=${classType}>
                 <p>Unconfirmed Transaction</p>
-                <p>${from}</p>
-                <p>${to}</p>
+                <p>${fromOrTo}</p>
                 <p>Message: ${getTransactionMessage(t)}</p>
                 <p>Amount: ${(t.xem().amount) + "XEM"} Fee: ${t.fee / 1000000} XEM </p>
             </div>
-        `);
+        `).catch(err => {throw err});
     }
+}
+
+function getBalance(address) {
+    return getOwnedMosaics().then(mosaics => {
+        const xem = mosaics.find(m => m.mosaicId.name === "xem" && m.mosaicId.namespaceId === "nem");
+        return xem.quantity;
+    });
 }
 
 /**
@@ -458,11 +516,14 @@ function getBalanceAndTxs() {
     const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
-    const obs = accountHttp.getFromAddress(address);
-    obs.toPromise()
-    .then((accountInfoWithMd) => {
-        let balance = accountInfoWithMd.balance.balance / 1000000;
+
+    getBalance(address)
+    .then((balance) => {
+        console.log("balance", balance);
         $('#p-balance').text(balance.toString() + ' XEM'); 
+    }).catch(err => {
+        $('#p-balance').text('0 XEM');
+        return;
     });
 
     // get unconfirmed
@@ -470,7 +531,7 @@ function getBalanceAndTxs() {
     .then(unconfirmedTrans => {
         unconfirmedTransactions = unconfirmedTrans.length;
         unconfirmedTrans.forEach(tx => {
-            const t = getTransferTransaction(tx);
+            const t = tx;
             if (!t) return;
             generateUnconfirmedTransactionItem(tx).then(t => {
                 $('#unconfirmed-transactions-box').append(t);
@@ -479,6 +540,7 @@ function getBalanceAndTxs() {
         // get comfirmed
         getAllTransactions(address)
         .then(transactions => {
+            if (!transactions[0]) return;
             const promises = transactions[0].map(tx => {
                 return generateTransactionItem(tx);
             });
@@ -486,8 +548,14 @@ function getBalanceAndTxs() {
                 trans.forEach(t => {
                     $('#last-transactions-box').append(t);
                 });
-            })
+            }).catch(err => {
+                throw err;
+            });
+        }).catch(err => {
+            throw err;
         });
+    }).catch(err => {
+        console.log("error", err);
     });
 }
 
@@ -500,10 +568,13 @@ function getNewBalanceAndTxs() {
     const network = (isTrezor) ? trezorNetwork : wallet.network;
     initLibrary(network);
     const accountHttp = new nem.AccountHttp();
-    accountHttp.getFromAddress(address).toPromise()
-    .then((accountInfoWithMd) => {
-        let balance = accountInfoWithMd.balance.balance / 1000000;
+    getBalance(address)
+    .then((balance) => {
+        console.log("balance", balance);
         $('#p-balance').text(balance.toString() + ' XEM'); 
+    }).catch(err => {
+        $('#p-balance').text('0 XEM');
+        return;
     });
     // get unconfirmed
     accountHttp.unconfirmedTransactions(address).toPromise()
@@ -511,7 +582,7 @@ function getNewBalanceAndTxs() {
         $('#unconfirmed-transactions-box').empty();
         const newUnconfirmedTransactions = unconfirmedTrans.length;
         unconfirmedTrans.forEach(tx => {
-            const t = getTransferTransaction(tx);
+            const t = tx;
             if (!t) return;
             generateUnconfirmedTransactionItem(tx).then(t => {
                 $('#unconfirmed-transactions-box').append(t);
@@ -520,10 +591,11 @@ function getNewBalanceAndTxs() {
         // get comfirmed
         getAllTransactions(address)
         .then(trans => {
+            if (!trans[0]) return;
             const transactions = trans[0];
             let promises = [];
             for(let i = 0; i < unconfirmedTransactions - newUnconfirmedTransactions; ++i){
-                promises.append(generateTransactionItem(transactions[i]));
+                promises.push(generateTransactionItem(transactions[i]));
             }
             Promise.all(promises).then(ts => {
                 ts.forEach(t => {
@@ -612,7 +684,11 @@ function renderHome() {
             renderLogin();
         } else {
             if (!isTrezor) {
-                wallet = readWalletFile(data.default_xem_wallet);
+                try {
+                    wallet = readWalletFile(data.default_xem_wallet);
+                } catch (e) {
+                    console.log("error", e);
+                }
             }
             const network = (isTrezor) ? trezorNetwork : wallet.network;
             initLibrary(network);
@@ -641,7 +717,7 @@ function renderHome() {
             $("#to-settings-button").click(() => renderSettings());
             const address = (isTrezor) ? trezorAccount.address : wallet.address;
             $('#p-address').text(address.pretty());
-            getBalanceAndTxs();
+            getBalanceAndTxs()
             clearIntervals();
             setInterval(() => getNewBalanceAndTxs(), 5000);
         }
@@ -708,9 +784,9 @@ function renderLogin() {
                 <div class="col-sm-12">
                     <button id="create-wallet" class="btn btn-1">${createWalletText}</button>
                 </div>
-                <div class="col-sm-12">
+                <!--<div class="col-sm-12">
                     <button id="trezor-login" class="btn btn-1">${trezorLoginText}</button>
-                </div>
+                </div>-->
             </div>
             <div id="warning-msg" class="row error hidden">
                 <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> ${errorImportWalletText}
@@ -738,40 +814,49 @@ function renderLogin() {
 */
 function renderNewTransaction() {
     $('body').empty();
-    // TODO: no password field when trezor
-    $('body').append(`
-        <!-- NEW TRANSACTION PAGE -->
-        <header>
+    getOwnedMosaics().then(mosaics => {
+        console.log("gotten", mosaics);
+        ownedMosaics = mosaics;
+        let elements = [];
+        mosaics.forEach((mosaic, i) => {
+            elements.push(`<option value=${i}>${mosaic.mosaicId.namespaceId}:${mosaic.mosaicId.name}</option>`);
+        });
+        let page = `
+        <!--NEW TRANSACTION PAGE -->
+            <header>
             <div class="navbar navbar-default navbar-fixed-top row">
-                <a id="to-home"><h1><</h1></a>
-                <h1 class="text-nav">${newTransactionText}</h1>
+            <a id="to-home"><h1><</h1></a>
+            <h1 class="text-nav">${newTransactionText}</h1>
             </div>
-        </header>
+            </header>
 
-        <div id="new-transaction-page" class="form-style-4">
-            <input type="text" id="recipient" placeholder="${recipientText}" class="form-control"></input>
-            <select id="mosaic-selected" class="dropdown-mosaic">
-            <!-- Carregar llistat de mosaics dinamicament i asigar com a valor el seu propi nom -->
-                <option value="${testnetId}">Mosaic #1</option>
-                <option value="${mainnetId}">Mosaic #2</option>
-                <option value="${mijinId}">Mosaic #3</option>
-            </select>
-            <input type="number" id="amount" placeholder="${amountText}" class="form-control"></input>
-            <input type="text" id="message" placeholder="${messageText}"class="form-control"></input>
-            <input type="password" id="password" placeholder="${passwordText}"class="form-control"></input>
-            <button id="send-transaction-button" class="btn btn-1">${sendTxText}</button>
-            <p id="success-message">${txSuccessText}</p>
-            <p class="error-message" id="incomplete-error-message">${allFieldsRequiredText}</p>
-            <p class="error-message" id="wrong-address-error-message">${wrongAddressText}</p>
-            <p class="error-message" id="an-error-message">${anErrorOcurredText}</p>
-            <p class="error-message" id="wrong-amount-error-message">${wrongAmountText}</p>
-        </div>
-        <!-- END NEW TRANSACTION PAGE -->`
-    );
-    $("#send-transaction-button").click(() => {
-        sendTransaction();
+            <div id="new-transaction-page" class="form-style-4">
+                <input type="text" id="recipient" placeholder="${recipientText}" class="form-control"></input>
+                <select id="mosaic-selected" class="dropdown-mosaic">
+                <!-- Carregar llistat de mosaics dinamicament i asigar com a valor el seu propi nom -->
+        `
+        elements.forEach(e => page += e);
+        page += `
+                </select>
+                <input type="number" id="amount" placeholder="${amountText}" class="form-control"></input>
+                <input type="text" id="message" placeholder="${messageText}"class="form-control"></input>
+                <input type="password" id="password" placeholder="${passwordText}"class="form-control"></input>
+                <button id="send-transaction-button" class="btn btn-1">${sendTxText}</button>
+                <p id="success-message">${txSuccessText}</p>
+                <p class="error-message" id="incomplete-error-message">${allFieldsRequiredText}</p>
+                <p class="error-message" id="wrong-address-error-message">${wrongAddressText}</p>
+                <p class="error-message" id="an-error-message">${anErrorOcurredText}</p>
+                <p class="error-message" id="wrong-amount-error-message">${wrongAmountText}</p>
+            </div>
+            <!-- END NEW TRANSACTION PAGE -->
+        `;
+        $('body').append(page);
+        $("#send-transaction-button").click(() => {
+            sendTransaction();
+        });
+        $("#to-home").click(() => renderHome());
     });
-    $("#to-home").click(() => renderHome());
+    // TODO: no password field when trezor
 }
 
 /**
@@ -782,13 +867,19 @@ function renderAccountInfoQR() {
     $('body').empty();
     $('body').append(`
         <!-- QR ADDRESS PAGE -->
+        <header>
+            <div class="navbar navbar-default navbar-fixed-top row">
+                <a id="to-settings"><h1><</h1></a>
+                <h1 class="text-nav">${accountText}</h1>
+            </div>
+        </header>
         <div id="qr-address-page">
-            <h4 id="h4-address" style="margin-top: 25px;"></h4>
-            <div class="row vertically-centered" style="margin-top: 50px;">
+            <h4 id="h4-address" style="margin-top: 80px;"></h4>
+            <div class="row">
                 <center><div id="accountInfoQR"></div></center>
             </div>
         </div>
-        <a id="to-settings"><i class="fa fa-arrow-left" aria-hidden="true" style="margin-top: 50px;"></i><a>
+        
         <!-- END QR ADDRESS PAGE -->`
     );
     const address = (isTrezor) ? trezorAccount.address : wallet.address;
@@ -819,7 +910,8 @@ function renderAccountInfoQR() {
 
 function renderMosaicList() {
     $('body').empty();
-    $('body').append(`
+    getOwnedMosaics().then(mosaics => {
+        let body = `
         <!-- QR ADDRESS PAGE -->
         <header>
             <div class="navbar navbar-default navbar-fixed-top">
@@ -837,26 +929,24 @@ function renderMosaicList() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td scope="row">Mosaic #1</td>
-                  <td>455.2</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #2</td>
-                  <td>300</td>
-
-                </tr>
-                <tr>
-                  <td scope="row">Mosaic #3</td>
-                  <td>200</td>
-                </tr>
-              </tbody>
-            </table>
-        </div>
-        <!-- END QR ADDRESS PAGE -->`
-    );
-    $("#to-home").click(() => renderHome());
+        `
+        mosaics.forEach(mosaic => {
+            body += `
+            <tr>
+              <td scope="row">${mosaic.mosaicId.namespaceId}:${mosaic.mosaicId.name}</td>
+              <td>${mosaic.quantity}</td>
+            </tr>
+            `
+        });
+        body += `
+                  </tbody>
+                </table>
+            </div>
+            <!-- END QR ADDRESS PAGE -->
+        `
+        $('body').append(body);
+        $("#to-home").click(() => renderHome());
+    });
 }
 
 /**
