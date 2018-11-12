@@ -8,24 +8,16 @@ You can get the extension downloading it at the [Chrome Webstore](https://chrome
 ### Features
 At this moment, the NEM Microwallet has the following features:
 - Creation, importing and exporting of Mainnet, Testnet and Mijin wallets.
+- Login with Trezor.
 - Transaction creation and sending containing:
   + Recipient
   + XEM Amount
   + Message
+- Send mosaics
 - Visualization of address and balance.
 - Visualization of outcoming, incoming and unconfirmed transactions.
 - Automatic refresh of balance and transactions.
 - Visualization of QR Address
-
-### Feature roadmap
-As this is still an Alpha version of the wallet, lots of features need to be included to make this wallet as much complete as possible, so the next features planned to add are the following:
-- Add Multiwallet support
-- Add Multisignature accounts support
-- Add Mosaic transfer support
-- Add Mosaic tools
-- Add Alias Service support
-- Add harvesting info and tools
-- ...
 
 Please don't hesiate to open feature request issues in this repository, we'll kindly appreciate them.
 
@@ -53,7 +45,13 @@ cd nem-microwallet
 npm install
 ```
 
-5. Build your release with:
+5. (If you don't have Browserify installed) Install Browserify:
+
+```
+npm install -g browserify
+```
+
+6. Build your release with:
 
 ```
 make
